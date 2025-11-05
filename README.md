@@ -1,4 +1,4 @@
 # Team4-Handcrafted-Haven
 
-Ethem Deli
-Rakotomamonjy Faharetana
+# Ethem Deli
+# Rakotomamonjy Faharetana
