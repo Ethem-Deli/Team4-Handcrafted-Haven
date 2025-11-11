@@ -19,3 +19,9 @@ h3,
 h4 {
   @apply font-bold;
 }
+
+.hero-section {
+  background-image: url('/hero-bg.jpg');
+  background-size: cover;
+  background-position: center;
+}
