@@ -1,0 +1,39 @@
+handcrafted-haven/
+│
+├── app/                        # Next.js app directory (App Router)
+│   ├── layout.tsx              # Root layout (shared across all pages)
+│   ├── page.tsx                # Home page
+│   ├── products/
+│   │   └── page.tsx            # Product listings page
+│   ├── sellers/
+│   │   └── page.tsx            # Seller profiles
+│   ├── api/
+│   │   ├── products/
+│   │   │   └── route.ts        # API route for products
+│   │   └── sellers/
+│   │       └── route.ts        # API route for sellers
+│   └── globals.css             # Global styles (Tailwind base)
+│
+├── components/                 # Reusable UI components
+│   ├── Navbar.tsx
+│   ├── Footer.tsx
+│   ├── ProductCard.tsx
+│   └── SellerCard.tsx
+│
+├── lib/                        # Utilities, database setup, etc.
+│   ├── db.ts                   # Database connection (placeholder)
+│   └── utils.ts                # Helper functions
+│
+├── public/                     # Static assets (images, icons, etc.)
+│   └── logo.png
+│
+├── styles/                     # Optional custom CSS modules
+│   └── theme.css
+│
+├── .env.local                  # Environment variables (not committed)
+├── .gitignore
+├── package.json
+├── postcss.config.js
+├── tailwind.config.js
+├── tsconfig.json
+└── README.md

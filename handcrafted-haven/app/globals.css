@@ -1,0 +1,35 @@
+@import "tailwindcss/preflight";
+/* base styles / reset */
+@tailwind utilities;
+/* all Tailwind utilities */
+
+:root {
+  --color-background: #F8F7F3;
+  /* offwhite */
+  --color-foreground: #3A3A3A;
+  /* charcoal */
+  --color-sage: #A3B18A;
+  --color-beige: #DAD7CD;
+  --color-terracotta: #CB997E;
+  --color-softgray: #6B705C;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: #0a0a0a;
+    --color-foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: 'Lato', sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: 'Playfair Display', serif;
+}

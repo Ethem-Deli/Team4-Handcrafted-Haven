@@ -1,0 +1,238 @@
+
+# Handcrafted Haven — Project Setup & Team Instructions
+
+## 1️⃣ Create the Next.js Project
+
+Open your terminal and run:
+
+```bash
+# Navigate to your working folder
+cd D:\Team4-Handcrafted-Haven
+
+# Create a new Next.js app with TypeScript
+npx create-next-app@latest handcrafted-haven --typescript
+```
+
+During prompts:
+
+ Linter: `ESLint` 
+ React Compiler: `No` 
+ Tailwind CSS: `Yes` 
+ `src/` directory: `No`  (optional, you can choose `Yes`)
+ App Router: `Yes`  (recommended)
+ Turbopack: `Yes`  (optional)
+ Import alias: `Yes` 
+ Alias: `@/` 
+
+---
+
+## 2️⃣ Install Tailwind CSS dependencies
+
+```bash
+cd handcrafted-haven
+
+# Install Tailwind CSS + PostCSS + Autoprefixer
+npm install -D tailwindcss postcss autoprefixer
+```
+
+---
+
+## 3️⃣ Configure Tailwind v4 manually
+
+Since the CLI sometimes fails on Windows, create the configs manually:
+
+tailwind.config.js
+
+```js
+/ @type {import('tailwindcss').Config} /
+module.exports = {
+  content: [
+    "./app//.{js,ts,jsx,tsx}",
+    "./components//.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        sage: "#A3B18A",
+        beige: "#DAD7CD",
+        terracotta: "#CB997E",
+        charcoal: "#3A3A3A",
+        softgray: "#6B705C",
+        offwhite: "#F8F7F3",
+      },
+      fontFamily: {
+        heading: ["Playfair Display", "serif"],
+        body: ["Lato", "sans-serif"],
+      },
+    },
+  },
+  plugins: [],
+}
+```
+
+postcss.config.js
+
+```js
+module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+```
+
+globals.css
+
+```css
+@import "tailwindcss/preflight"; / Tailwind v4 base /
+@tailwind utilities;             / Tailwind utilities /
+
+:root {
+  --color-background: #F8F7F3;
+  --color-foreground: #3A3A3A;
+  --color-sage: #A3B18A;
+  --color-beige: #DAD7CD;
+  --color-terracotta: #CB997E;
+  --color-softgray: #6B705C;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: 'Lato', sans-serif;
+}
+
+h1,h2,h3,h4 {
+  font-family: 'Playfair Display', serif;
+}
+```
+
+---
+
+## 4️⃣ Create folder structure
+
+```
+handcrafted-haven/
+├─ app/
+│  ├─ layout.tsx
+│  ├─ page.tsx
+├─ components/
+│  ├─ Navbar.tsx
+│  └─ Footer.tsx
+├─ public/
+│  └─ images/
+├─ styles/
+│  └─ globals.css
+├─ tailwind.config.js
+├─ postcss.config.js
+├─ package.json
+├─ tsconfig.json
+└─ README.md
+```
+
+ You can add more folders for pages, APIs, or features as needed.
+
+---
+
+## 5️⃣ Initialize Git & GitHub
+
+```bash
+# Initialize Git
+git init
+
+# Add all files
+git add .
+
+# Commit initial project
+git commit -m "Initial Next.js + Tailwind v4 setup for Handcrafted Haven"
+
+# Create a GitHub repo (replace URL)
+git remote add origin https://github.com/YourUsername/handcrafted-haven.git
+
+# Push to GitHub
+git branch -M main
+git push -u origin main
+```
+
+---
+
+## 6️⃣ NPM scripts in package.json
+
+Check that your `package.json` has:
+
+```json
+"scripts": {
+  "dev": "next dev",
+  "build": "next build",
+  "start": "next start",
+  "lint": "next lint"
+}
+```
+
+Commands for development:
+
+```bash
+# Start development server (hot reload)
+npm run dev
+
+# Build for production
+npm run build
+
+# Run production server
+npm run start
+
+# Lint the project
+npm run lint
+```
+
+---
+
+## 7️⃣ Team instructions before starting work
+
+1. Clone the repo:
+
+```bash
+git clone https://github.com/YourUsername/handcrafted-haven.git
+cd handcrafted-haven
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Pull the latest changes before starting work:
+
+```bash
+git pull origin main
+```
+
+4. Create a new branch for your task:
+
+```bash
+git checkout -b feature/navbar
+```
+
+5. Commit changes with meaningful messages:
+
+```bash
+git add .
+git commit -m "Add Navbar component"
+```
+
+6. Push branch to GitHub:
+
+```bash
+git push origin feature/navbar
+```
+
+7. Open a Pull Request (PR) and assign a reviewer before merging into `main`.
+
+8. Pull changes from main before starting a new feature:
+
+```bash
+git checkout main
+git pull origin main
+```
+
