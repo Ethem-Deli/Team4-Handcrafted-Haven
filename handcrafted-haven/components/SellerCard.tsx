@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 interface SellerCardProps {
   name: string;
   img: string;
@@ -5,11 +7,17 @@ interface SellerCardProps {
 
 export default function SellerCard({ name, img }: SellerCardProps) {
   return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition">
-      <img src={img} alt={name} className="w-full h-48 object-cover" />
+    <div className="bg-white shadow-md rounded-xl overflow-hidden hover:shadow-lg transition">
+      <Image
+        src={img}
+        alt={name}
+        width={250}
+        height={250}
+        className="w-full h-64 object-cover"
+      />
       <div className="p-4">
-        <h3 className="font-semibold text-lg">{name}</h3>
-        <p className="text-sm text-gray-600 mt-2">Specializing in handmade crafts</p>
+        <h3 className="text-lg font-semibold text-gray-800">{name}</h3>
+        <p className="text-sm text-gray-600 mt-1">Master artisan & creator</p>
       </div>
     </div>
   );

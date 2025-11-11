@@ -1,14 +1,20 @@
 import SellerCard from "./SellerCard";
+import { sellers } from "@/data/sellers";
 
-export default function TopSellers() {
+interface TopSellersProps {
+  limit?: number; // Optional limit for homepage
+}
+
+export default function TopSellers({ limit }: TopSellersProps) {
+  const displayedSellers = limit ? sellers.slice(0, limit) : sellers;
+
   return (
     <section className="bg-[#EAE6DA] py-16 text-center">
       <h2 className="text-3xl font-semibold text-gray-800 mb-10">Our Top Sellers</h2>
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8 px-8">
-        <SellerCard name="Artisan Name" img="/images/artisan1.jpg" />
-        <SellerCard name="Artisan Name" img="/images/artisan2.jpg" />
-        <SellerCard name="Artisan Name" img="/images/artisan3.jpg" />
-        <SellerCard name="Artisan Name" img="/images/artisan4.jpg" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 px-8">
+        {displayedSellers.map((seller) => (
+          <SellerCard key={seller.id} name={seller.name} img={seller.img} />
+        ))}
       </div>
     </section>
   );
