@@ -5,7 +5,7 @@ export default function Navbar() {
   return (
     <nav className="bg-[#A6AE8C] text-gray-900 flex justify-between items-center px-8 py-4">
       <div className="flex items-center gap-2">
-        <Image src="/images/logo.jpg" alt="Logo" width={80} height={80} />
+        <Image src="/images/logo.jpg" alt="Logo" width={80} height={80} className="rounded-full"/>
         <span className="font-semibold text-xl">Handcrafted Haven</span>
       </div>
       <div className="flex gap-4">
