@@ -16,7 +16,7 @@ export default function HomePage() {
       <Hero />
       {/* Top Sellers Section - Only 3 */}
       <div className="py-12">
-        <TopSellers limit={3} />
+          <TopSellers limit={3} />
         <a
           href="/topsellers"
           className="mt-8 inline-block px-12 py-3 bg-terracotta text-black rounded-lg shadow hover:bg-slate-900 hover:text-white transition-colors duration-300"
@@ -34,13 +34,14 @@ export default function HomePage() {
           {products.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
-        </div>        
+        </div>
       </main>
       <a
-            href="/products"
-            className="inline-block px-12 py-3 bg-terracotta text-black rounded-lg shadow hover:bg-slate-900 hover:text-white transition-colors duration-300">
-            Explore More Products
-          </a>
+        href="/products"
+        className="inline-block px-12 py-3 bg-terracotta text-black rounded-lg shadow hover:bg-slate-900 hover:text-white transition-colors duration-300"
+      >
+        Explore More Products
+      </a>
     </section>
   );
 }

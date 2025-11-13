@@ -9,9 +9,18 @@ export default function Navbar() {
         <span className="font-semibold text-xl">Handcrafted Haven</span>
       </div>
       <div className="flex gap-4">
-        <Link href="/" className="hover:underline">Home</Link>
-        <Link href="/shop" className="hover:underline">Shop</Link>
-        <Link href="/about" className="hover:underline">About</Link>
+        <Link href="/" className="relative inline-block text-lg text-gray-800  
+  before:absolute before:bottom-0 before:left-0 before:w-0 before:h-0.5 before:bg-black
+  hover:before:w-full hover:before:transition-all hover:before:duration-300
+  hover:text-black">Home</Link>
+        <Link href="/shop" className="relative inline-block text-lg text-gray-800  
+  before:absolute before:bottom-0 before:left-0 before:w-0 before:h-0.5 before:bg-black
+  hover:before:w-full hover:before:transition-all hover:before:duration-300
+  hover:text-black">Shop</Link>
+        <Link href="/about" className="relative inline-block text-lg text-gray-800  
+  before:absolute before:bottom-0 before:left-0 before:w-0 before:h-0.5 before:bg-black
+  hover:before:w-full hover:before:transition-all hover:before:duration-300
+  hover:text-black">About</Link>
       </div>
     </nav>
   );
