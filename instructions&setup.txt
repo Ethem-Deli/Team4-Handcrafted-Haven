@@ -18,7 +18,7 @@ During prompts:
  Linter: `ESLint` 
  React Compiler: `No` 
  Tailwind CSS: `Yes` 
- `src/` directory: `No`  (optional, you can choose `Yes`)
+ `src/` directory: `yes`  (optional, you can choose `Yes`)
  App Router: `Yes`  (recommended)
  Turbopack: `Yes`  (optional)
  Import alias: `Yes` 

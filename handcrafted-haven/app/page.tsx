@@ -42,6 +42,25 @@ export default function HomePage() {
       >
         Explore More Products
       </a>
+      <div><a
+  href="/products/upload"
+  className="
+    inline-block 
+    bg-terracotta 
+    text-black
+    px-6 
+    py-3 
+    rounded-xl 
+    font-semibold 
+    shadow-md 
+    hover:bg-green-600 
+    transition-all 
+    duration-300
+  "
+>
+  Upload a Product
+</a></div>
     </section>
+    
   );
 }
