@@ -1,7 +1,6 @@
 import { products } from "@/data/products";
 import { sellers, Seller } from "@/data/sellers";
 
-// Define Product type here
 interface Product {
   id: number;
   name: string;
@@ -30,6 +29,7 @@ export default function SearchPage({ searchParams }: SearchParams) {
     seller.name.toLowerCase().includes(query)
   );
 
+  // Determine if there are no results at all
   const noResults = filteredProducts.length === 0 && filteredSellers.length === 0;
 
   return (
@@ -38,6 +38,7 @@ export default function SearchPage({ searchParams }: SearchParams) {
         Search Results for: <span className="text-terracotta">{query}</span>
       </h1>
 
+      {/* No results */}
       {noResults && (
         <div className="text-gray-600 text-lg border p-6 rounded-lg bg-gray-50 max-w-lg">
           <strong>No results found.</strong>
@@ -46,12 +47,12 @@ export default function SearchPage({ searchParams }: SearchParams) {
         </div>
       )}
 
-      {/* Products */}
+      {/* Products grid - only if products found */}
       {filteredProducts.length > 0 && (
         <>
           <h2 className="text-2xl font-semibold mb-4 mt-6">Products</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-            {filteredProducts.map((product: Product) => (
+            {filteredProducts.map((product) => (
               <div
                 key={product.id}
                 className="border rounded-lg overflow-hidden shadow-md bg-white hover:shadow-lg transition"
@@ -75,12 +76,12 @@ export default function SearchPage({ searchParams }: SearchParams) {
         </>
       )}
 
-      {/* Sellers */}
+      {/* Sellers grid - only if sellers found */}
       {filteredSellers.length > 0 && (
         <>
           <h2 className="text-2xl font-semibold mb-4 mt-10">Sellers</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {filteredSellers.map((seller: Seller) => (
+            {filteredSellers.map((seller) => (
               <div
                 key={seller.id}
                 className="border p-4 rounded-lg shadow hover:shadow-lg transition bg-white flex flex-col items-center"
