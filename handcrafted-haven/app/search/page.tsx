@@ -1,53 +1,147 @@
+"use client";
+
+import { useState, use } from "react";
+import Fuse from "fuse.js";
 import { products } from "@/data/products";
 import { sellers, Seller } from "@/data/sellers";
 
+// Local Product type
 interface Product {
   id: number;
   name: string;
   price: number;
   image: string;
   description: string;
+  category: string;
 }
 
-interface SearchParams {
-  searchParams: { q?: string };
+// Next.js 16 searchParams are ASYNC
+interface Props {
+  searchParams: Promise<{ q?: string }>;
 }
 
-export default function SearchPage({ searchParams }: SearchParams) {
-  const query = (searchParams.q || "").trim().toLowerCase();
+// Highlight matched substring
+function highlight(text: string, query: string) {
+  if (!query) return text;
+  const regex = new RegExp(`(${query})`, "gi");
+  return text.replace(regex, "<mark>$1</mark>");
+}
 
-  // Filter products by name or description
-  const filteredProducts = products.filter((product: Product) => {
-    return (
-      product.name.toLowerCase().includes(query) ||
-      product.description.toLowerCase().includes(query)
-    );
+export default function SearchPage({ searchParams }: Props) {
+  // FIX: unwrap async searchParams using use()
+  const params = use(searchParams);
+  const initialQuery = (params?.q || "").trim();
+
+  const [query, setQuery] = useState(initialQuery);
+  const [minPrice, setMinPrice] = useState(0);
+  const [maxPrice, setMaxPrice] = useState(9999);
+  const [selectedCategory, setSelectedCategory] = useState("all");
+
+  // Fuzzy search config
+  const fuseProducts = new Fuse(products as Product[], {
+    keys: ["name", "description", "category"],
+    threshold: 0.35,
   });
 
-  // Filter sellers by name
-  const filteredSellers = sellers.filter((seller: Seller) =>
-    seller.name.toLowerCase().includes(query)
-  );
+  const fuseSellers = new Fuse(sellers, {
+    keys: ["name"],
+    threshold: 0.3,
+  });
 
-  // Determine if there are no results at all
-  const noResults = filteredProducts.length === 0 && filteredSellers.length === 0;
+  const productResults = query
+    ? fuseProducts.search(query).map((r) => r.item)
+    : (products as Product[]);
+
+  const sellerResults = query
+    ? fuseSellers.search(query).map((r) => r.item)
+    : sellers;
+
+  const filteredProducts = productResults.filter((p) => {
+    const priceOK = p.price >= minPrice && p.price <= maxPrice;
+    const categoryOK =
+      selectedCategory === "all" || p.category === selectedCategory;
+    return priceOK && categoryOK;
+  });
+
+  const noResults =
+    filteredProducts.length === 0 && sellerResults.length === 0;
+
+  const categories = Array.from(
+  new Set(
+    products
+      .map((p: any) => p.category?.trim().toLowerCase())
+      .filter(Boolean) // removes undefined / null / empty
+  )
+);
+
 
   return (
     <div className="p-10">
-      <h1 className="text-3xl font-bold mb-6">
-        Search Results for: <span className="text-terracotta">{query}</span>
-      </h1>
+      <h1 className="text-3xl font-bold mb-6">Enhanced Search</h1>
 
-      {/* No results */}
+      {/* Search Filters */}
+      <div className="flex gap-4 mb-8 items-end">
+        {/* Search */}
+        <div className="flex flex-col w-1/3">
+          <label className="font-medium mb-1">Search</label>
+          <input
+            type="text"
+            className="border p-2 rounded"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
+
+        {/* Category */}
+        <div className="flex flex-col w-1/4">
+          <label className="font-medium mb-1">Category</label>
+          <select
+            className="border p-2 rounded"
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+          >
+            <option value="all">All Categories</option>
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Min Price */}
+        <div className="flex flex-col w-1/6">
+          <label className="font-medium mb-1">Min Price</label>
+          <input
+            type="number"
+            className="border p-2 rounded"
+            value={minPrice}
+            onChange={(e) => setMinPrice(Number(e.target.value))}
+          />
+        </div>
+
+        {/* Max Price */}
+        <div className="flex flex-col w-1/6">
+          <label className="font-medium mb-1">Max Price</label>
+          <input
+            type="number"
+            className="border p-2 rounded"
+            value={maxPrice}
+            onChange={(e) => setMaxPrice(Number(e.target.value))}
+          />
+        </div>
+      </div>
+
+      {/* No Results */}
       {noResults && (
         <div className="text-gray-600 text-lg border p-6 rounded-lg bg-gray-50 max-w-lg">
           <strong>No results found.</strong>
-          <br />
-          No products or sellers match: <span className="font-medium">{query}</span>
+          <br /> No matches for:{" "}
+          <span className="font-medium">{query}</span>
         </div>
       )}
 
-      {/* Products grid - only if products found */}
+      {/* Products */}
       {filteredProducts.length > 0 && (
         <>
           <h2 className="text-2xl font-semibold mb-4 mt-6">Products</h2>
@@ -63,12 +157,21 @@ export default function SearchPage({ searchParams }: SearchParams) {
                   className="w-full h-48 object-cover"
                 />
                 <div className="p-4">
-                  <h3 className="text-xl font-semibold">{product.name}</h3>
-                  <p className="text-gray-600 mt-1">{product.description}</p>
-                  <p className="text-lg font-bold mt-3">${product.price}</p>
-                  <button className="mt-4 w-full bg-gray-800 text-white py-2 rounded hover:bg-black">
-                    View Details
-                  </button>
+                  <h3
+                    className="text-xl font-semibold"
+                    dangerouslySetInnerHTML={{
+                      __html: highlight(product.name, query),
+                    }}
+                  />
+                  <p
+                    className="text-gray-600 mt-1"
+                    dangerouslySetInnerHTML={{
+                      __html: highlight(product.description, query),
+                    }}
+                  />
+                  <p className="text-lg font-bold mt-3">
+                    ${product.price.toFixed(2)}
+                  </p>
                 </div>
               </div>
             ))}
@@ -76,12 +179,12 @@ export default function SearchPage({ searchParams }: SearchParams) {
         </>
       )}
 
-      {/* Sellers grid - only if sellers found */}
-      {filteredSellers.length > 0 && (
+      {/* Sellers */}
+      {sellerResults.length > 0 && (
         <>
           <h2 className="text-2xl font-semibold mb-4 mt-10">Sellers</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {filteredSellers.map((seller) => (
+            {sellerResults.map((seller) => (
               <div
                 key={seller.id}
                 className="border p-4 rounded-lg shadow hover:shadow-lg transition bg-white flex flex-col items-center"
@@ -91,7 +194,12 @@ export default function SearchPage({ searchParams }: SearchParams) {
                   alt={seller.name}
                   className="w-32 h-32 object-cover rounded-full mb-3"
                 />
-                <h3 className="text-xl font-semibold text-center">{seller.name}</h3>
+                <h3
+                  className="text-xl font-semibold text-center"
+                  dangerouslySetInnerHTML={{
+                    __html: highlight(seller.name, query),
+                  }}
+                />
               </div>
             ))}
           </div>

@@ -236,3 +236,17 @@ git checkout main
 git pull origin main
 ```
 
+as faharetana added responsive nav we need to install also in local
+npm install lucide-react
+or 
+pnpm add lucide-react
+then again restart your server
+
+npm run dev
+or 
+pnpm run dev
+
+enhancing the search button and install below for your local 
+npm install fuse.js
+or
+pnpm install fuse.js
