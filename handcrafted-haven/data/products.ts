@@ -6,83 +6,96 @@ export const products: Product[] = [
     name: "Handwoven Basket",
     price: 25.0,
     image: "/products/basket.jpg",
-    description: "A beautifully crafted handwoven basket made from natural fibers."
+    description: "A beautifully crafted handwoven basket made from natural fibers.",
+    category: "Home Decor"
   },
   {
     id: 2,
     name: "Ceramic Vase",
     price: 40.0,
     image: "/products/vase.jpg",
-    description: "Elegant handmade ceramic vase perfect for home decor."
+    description: "Elegant handmade ceramic vase perfect for home decor.",
+    category: "Home Decor"
   },
   {
     id: 3,
     name: "Wooden Jewelry Box",
     price: 55.0,
     image: "/products/jewelry-box.jpg",
-    description: "Intricately carved wooden jewelry box with velvet lining."
+    description: "Intricately carved wooden jewelry box with velvet lining.",
+    category: "Accessories"
   },
   {
     id: 4,
     name: "Macrame Wall Hanging",
     price: 30.0,
     image: "/products/macrame.jpg",
-    description: "Boho-style macrame wall art made from 100% cotton cord."
-  },
+    description: "Boho-style macrame wall art made from 100% cotton cord.",
+    category: "Wall Art"
+  }
+  ,
   {
     id: 5,
     name: "Soy Wax Candle",
     price: 15.0,
     image: "/products/candle.jpg",
-    description: "Hand-poured soy wax candle with lavender scent."
+    description: "Hand-poured soy wax candle with lavender scent.",
+    category: "Aromatherapy"
   },
   {
     id: 6,
     name: "Knitted Scarf",
     price: 22.0,
     image: "/products/scarf.jpg",
-    description: "Cozy handmade scarf knitted from soft alpaca wool."
+    description: "Cozy handmade scarf knitted from soft alpaca wool.",
+    category: "Clothing"
   },
   {
     id: 7,
     name: "Resin Coasters Set",
     price: 28.0,
     image: "/products/coasters.jpg",
-    description: "Set of four resin coasters featuring dried flowers and gold flakes."
+    description: "Set of four resin coasters featuring dried flowers and gold flakes.",
+    category: "Kitchenware"
   },
   {
     id: 8,
     name: "Leather Notebook Cover",
     price: 45.0,
     image: "/products/notebook.jpg",
-    description: "Durable handmade leather notebook cover with a rustic finish."
+    description: "Durable handmade leather notebook cover with a rustic finish.",
+    category: "Stationery"
   },
   {
     id: 9,
     name: "Hand-painted Mug",
     price: 18.0,
     image: "/products/mug.jpg",
-    description: "Unique hand-painted ceramic mug for your morning coffee."
+    description: "Unique hand-painted ceramic mug for your morning coffee.",
+    category: "Kitchenware"
   },
   {
     id: 10,
     name: "Bamboo Cutting Board",
     price: 35.0,
     image: "/products/cutting-board.jpg",
-    description: "Eco-friendly bamboo cutting board with a smooth finish."
-    },
+    description: "Eco-friendly bamboo cutting board with a smooth finish.",
+    category: "Kitchenware"
+  },
   {
     id: 11,
     name: "Crochet Tote Bag",
     price: 38.0,
     image: "/products/tote-bag.jpg",
-    description: "Charming crochet tote bag, perfect for daily use or casual outings."
+    description: "Charming crochet tote bag, perfect for daily use or casual outings.",
+    category: "Accessories"
   },
   {
     id: 12,
     name: "Clay Plant Pot",
     price: 27.0,
     image: "/products/plant-pot.jpg",
-    description: "Minimalist handmade clay pot ideal for succulents and small plants."
+    description: "Minimalist handmade clay pot ideal for succulents and small plants.",
+    category: "Home Decor"
   }
 ];

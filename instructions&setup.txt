@@ -173,7 +173,7 @@ Commands for development:
 
 ```bash
 # Start development server (hot reload)
-npm run dev
+cd handcrafted-haven
 
 # Build for production
 npm run build

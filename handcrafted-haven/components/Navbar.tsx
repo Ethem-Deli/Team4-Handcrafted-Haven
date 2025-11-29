@@ -59,10 +59,11 @@ export default function Navbar() {
             </Link>
 
             <Link
+              
               href="/shop"
-              className="relative inline-block text-lg text-gray-800 before:absolute before:bottom-0 before:left-0 before:block before:h-0.5 before:w-0 before:bg-black hover:before:w-full hover:before:transition-all hover:before:duration-300 hover:text-black"
-            >
+              className="relative inline-block text-lg text-gray-800 before:absolute before:bottom-0 before:left-0 before:block before:h-0.5 before:w-0 before:bg-black hover:before:w-full hover:before:transition-all hover:before:duration-300 hover:text-black">
               Shop
+              
             </Link>
 
             <Link
