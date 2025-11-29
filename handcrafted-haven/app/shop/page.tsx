@@ -1,8 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import shopItems from "@/data/items.json";
+import { addToCart } from "@/app/actions/cart";
+import ProductModal from "@/components/ProductModal";
+
+type User = {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+};
 
 const categories = [
   "Home & Living",
@@ -15,18 +25,43 @@ const categories = [
   "Vintage",
   "Bags & Purses",
   "Woodwork",
+  // add more item if needed
 ];
 
-// Flatten items into one array
+// Flatten items into a single product array
 const allProducts = shopItems.pages.flatMap((page: any) =>
   page.items.map((item: any) => ({
     ...item,
-    category: page.category, // attach category from page
+    category: page.category,
   }))
 );
 
 export default function ShopPage() {
+  const router = useRouter();
+
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+
+  // Modal state
+  const [modalProduct, setModalProduct] = useState<any | null>(null);
+
+  // Load logged-in user
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("user");
+      if (stored) setUser(JSON.parse(stored));
+    }
+  }, []);
+
+  async function handleAddToCart(product: any) {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
+    await addToCart(user.id, product);
+    alert("Item added to cart!");
+  }
 
   const filteredProducts =
     selectedCategory === null
@@ -35,7 +70,8 @@ export default function ShopPage() {
 
   return (
     <div className="px-6 py-10 flex gap-10">
-      {/*SIDEBAR*/}
+
+      {/* SIDEBAR */}
       <aside className="w-64 bg-white shadow-md rounded-xl p-5 h-fit">
         <h2 className="text-xl font-bold mb-4 text-gray-800">Catalog</h2>
 
@@ -65,7 +101,7 @@ export default function ShopPage() {
         ))}
       </aside>
 
-      {/*PRODUCT GRID*/}
+      {/* PRODUCT GRID */}
       <div className="flex-1">
         <h1 className="text-3xl font-bold mb-6 text-gray-800">
           {selectedCategory || "All Products"}
@@ -87,17 +123,54 @@ export default function ShopPage() {
 
               <h2 className="mt-3 text-xl font-semibold">{product.name}</h2>
               <p className="text-gray-600 text-sm mt-1">{product.category}</p>
-              <p className="text-lg font-bold mt-2">${product.price.toFixed(2)}</p>
+              <p className="text-lg font-bold mt-2">
+                ${product.price.toFixed(2)}
+              </p>
 
-              <p className="text-gray-700 text-sm mt-2">{product.description}</p>
+              <p className="text-gray-700 text-sm mt-2">
+                {product.description}
+              </p>
 
-              <button className="mt-4 w-full bg-gray-800 text-white py-2 rounded-lg hover:bg-black">
+              {/* VIEW BUTTON */}
+              <button
+                onClick={() => setModalProduct(product)}
+                className="mt-3 w-full bg-gray-600 text-white py-2 rounded-lg hover:bg-gray-700"
+              >
+                View
+              </button>
+
+              {/* ADD TO CART BUTTON */}
+              <button
+                onClick={() => handleAddToCart(product)}
+                className="mt-2 w-full bg-gray-800 text-white py-2 rounded-lg hover:bg-black"
+              >
                 Add to Cart
               </button>
             </div>
           ))}
         </div>
       </div>
+
+      {/* PRODUCT MODAL */}
+      {modalProduct && (
+        <ProductModal
+          product={modalProduct}
+          onClose={() => setModalProduct(null)}
+          onAdd={async (prod: any) => {
+            if (!user) {
+              router.push("/login");
+              return;
+            }
+            await fetch("/api/cart", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ userId: user.id, product: prod }),
+            });
+            setModalProduct(null);
+            alert("Added to cart");
+          }}
+        />
+      )}
     </div>
   );
 }

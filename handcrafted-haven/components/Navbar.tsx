@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { logoutUser } from "@/app/actions/auth";
+import CartIcon from "@/components/CartIcon";
 
 export default function Navbar() {
   const router = useRouter();
@@ -49,13 +50,9 @@ export default function Navbar() {
 
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center gap-6">
-          <form action={logoutUser}>
-            <button className="ml-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
-                   Logout
-            </button>
-          </form>
 
           {/* NAV LINKS */}
+          <div className="hidden md:flex items-center gap-6">
           <div className="flex gap-4">
             <Link
               href="/"
@@ -86,14 +83,30 @@ export default function Navbar() {
               Register
             </Link>
 
-            <Link
+            {/* <Link
               href="/login"
               className="relative inline-block text-lg text-gray-800 before:absolute before:bottom-0 before:left-0 before:block before:h-0.5 before:w-0 before:bg-black hover:before:w-full hover:before:transition-all hover:before:duration-300 hover:text-black"
             >
               Login
-            </Link>
-            
-          </div>
+              </Link> */}
+              
+              <Link
+                href="/login">
+              <form action={logoutUser}>
+            <button className="ml-4 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                   Login
+            </button>
+                </form>
+                </Link>
+              
+            <form action={logoutUser}>
+            <button className="ml-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+                   Logout
+            </button>
+          </form>
+            </div>
+            <CartIcon />
+              </div>
 
           {/* SEARCH BAR */}
           <form
