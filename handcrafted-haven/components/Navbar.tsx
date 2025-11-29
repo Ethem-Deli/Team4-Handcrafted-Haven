@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Menu, X } from "lucide-react";
+import { logoutUser } from "@/app/actions/auth";
 
 export default function Navbar() {
   const router = useRouter();
@@ -48,6 +49,11 @@ export default function Navbar() {
 
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center gap-6">
+          <form action={logoutUser}>
+            <button className="ml-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+                   Logout
+            </button>
+          </form>
 
           {/* NAV LINKS */}
           <div className="flex gap-4">
@@ -63,7 +69,7 @@ export default function Navbar() {
               href="/shop"
               className="relative inline-block text-lg text-gray-800 before:absolute before:bottom-0 before:left-0 before:block before:h-0.5 before:w-0 before:bg-black hover:before:w-full hover:before:transition-all hover:before:duration-300 hover:text-black">
               Shop
-              
+
             </Link>
 
             <Link
@@ -72,6 +78,21 @@ export default function Navbar() {
             >
               About
             </Link>
+
+            <Link
+              href="/join"
+              className="relative inline-block text-lg text-gray-800 before:absolute before:bottom-0 before:left-0 before:block before:h-0.5 before:w-0 before:bg-black hover:before:w-full hover:before:transition-all hover:before:duration-300 hover:text-black"
+            >
+              Register
+            </Link>
+
+            <Link
+              href="/login"
+              className="relative inline-block text-lg text-gray-800 before:absolute before:bottom-0 before:left-0 before:block before:h-0.5 before:w-0 before:bg-black hover:before:w-full hover:before:transition-all hover:before:duration-300 hover:text-black"
+            >
+              Login
+            </Link>
+            
           </div>
 
           {/* SEARCH BAR */}
@@ -113,6 +134,11 @@ export default function Navbar() {
               <button className="px-3 py-1 bg-gray-800 text-white hover:bg-black">
                 🔍
               </button>
+              <form action={logoutUser}>
+                <button className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+                  Logout
+                </button>
+              </form>
             </form>
 
           </div>

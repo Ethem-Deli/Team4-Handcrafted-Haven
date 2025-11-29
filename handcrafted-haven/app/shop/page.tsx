@@ -17,7 +17,7 @@ const categories = [
   "Woodwork",
 ];
 
-// Flatten paginated items into one array
+// Flatten items into one array
 const allProducts = shopItems.pages.flatMap((page: any) =>
   page.items.map((item: any) => ({
     ...item,
@@ -35,7 +35,7 @@ export default function ShopPage() {
 
   return (
     <div className="px-6 py-10 flex gap-10">
-      {/* ==================== SIDEBAR ==================== */}
+      {/*SIDEBAR*/}
       <aside className="w-64 bg-white shadow-md rounded-xl p-5 h-fit">
         <h2 className="text-xl font-bold mb-4 text-gray-800">Catalog</h2>
 
@@ -65,7 +65,7 @@ export default function ShopPage() {
         ))}
       </aside>
 
-      {/* ==================== PRODUCT GRID ==================== */}
+      {/*PRODUCT GRID*/}
       <div className="flex-1">
         <h1 className="text-3xl font-bold mb-6 text-gray-800">
           {selectedCategory || "All Products"}

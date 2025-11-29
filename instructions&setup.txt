@@ -250,3 +250,10 @@ enhancing the search button and install below for your local
 npm install fuse.js
 or
 pnpm install fuse.js
+
+
+29/11/2025 added bcryptjs so install it as below
+  pnpm add bcryptjs 
+  pnpm add -D @types/bcryptjs
+
+  
