@@ -242,6 +242,7 @@ or
 pnpm add lucide-react
 then again restart your server
 
+cd handcrafted-haven
 npm run dev
 or 
 pnpm run dev
@@ -253,7 +254,11 @@ pnpm install fuse.js
 
 
 29/11/2025 added bcryptjs so install it as below
-  pnpm add bcryptjs 
-  pnpm add -D @types/bcryptjs
+    pnpm add bcryptjs 
+    pnpm add -D @types/bcryptjs
 
-  
+  links to submit
+
+  https://github.com/users/Ethem-Deli/projects/2
+
+  https://github.com/Ethem-Deli/Team4-Handcrafted-Haven.git

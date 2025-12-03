@@ -1,3 +1,13 @@
 {
-  "products": []
+  "products": [
+    {
+      "id": 1764785148186,
+      "sellerId": 1,
+      "name": "Hat",
+      "price": 55,
+      "category": "clothes",
+      "image": "",
+      "description": "fancy"
+    }
+  ]
 }

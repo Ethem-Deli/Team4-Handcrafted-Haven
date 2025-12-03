@@ -83,6 +83,33 @@
       "email": "mia.customer@example.com",
       "password": "flores999",
       "role": "customer"
+    },
+    {
+      "id": 1764777782146,
+      "name": "Ethem",
+      "email": "edeli@byu.com",
+      "password": "$2b$10$cq0bISYgLztZHYVsGQ0E8u2JEhFdfDQXJ0ylXCchcGXZfV7T4As1W",
+      "role": "seller",
+      "storeName": "Test",
+      "craftDescription": "Test"
+    },
+    {
+      "id": 1764777897554,
+      "name": "Test 123",
+      "email": "edeli@byupathway.edu",
+      "password": "$2b$10$f0LrShU0Gp9Qfa791JpCRuFvUlP0BWCkTHFAQT0gAaa1Que5XjFUe",
+      "role": "seller",
+      "storeName": "test",
+      "craftDescription": "testing the page"
+    },
+    {
+      "id": 1764778149338,
+      "name": "Admin Test",
+      "email": "Admin@test.com",
+      "password": "$2b$10$YBQxBQBrj5n3lWp2Q0sYMep0sYDqb9ZOaz5aVr3HkKt/AM8tHLWXy",
+      "role": "customer",
+      "storeName": "",
+      "craftDescription": ""
     }
   ]
 }

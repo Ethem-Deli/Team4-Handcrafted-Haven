@@ -37,7 +37,7 @@ export default function HomePage() {
         </div>
       </main>
       <a
-        href="/products"
+        href="/shop"
         className="inline-block px-12 py-3 bg-terracotta text-black rounded-lg shadow hover:bg-slate-900 hover:text-white transition-colors duration-300"
       >
         Explore More Products
