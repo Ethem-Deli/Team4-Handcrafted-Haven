@@ -262,3 +262,10 @@ pnpm install fuse.js
   https://github.com/users/Ethem-Deli/projects/2
 
   https://github.com/Ethem-Deli/Team4-Handcrafted-Haven.git
+
+
+  04/12/2025
+  pnpm install next-auth @prisma/client prisma bcryptjs
+pnpm install -D @types/bcryptjs
+pnpm install firebase
+pnpm add @next-auth/prisma-adapter

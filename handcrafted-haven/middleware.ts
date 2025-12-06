@@ -39,6 +39,8 @@ export function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
+export { default } from "next-auth/middleware";
+
 export const config = {
-  matcher: ["/seller/:path*", "/customer/:path*"],
+  matcher: ["/seller/:path*", "/api/seller/:path*"],
 };
