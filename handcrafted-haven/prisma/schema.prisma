@@ -13,14 +13,16 @@ enum Role {
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
-  name      String?
-  email     String    @unique
-  password  String
-  role      Role      @default(SELLER)
-  products  Product[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id              Int       @id @default(autoincrement())
+  name            String?
+  email           String    @unique
+  password        String
+  role            Role      @default(SELLER)
+  storeName       String?
+  craftDescription String?
+  products        Product[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
 
 model Category {

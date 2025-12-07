@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     const hashed = await bcrypt.hash(password, 10);
 
     const normalizedRole =
-      role && role.toLowerCase() === "customer" ? "CUSTOMER" : "SELLER";
+      role && role.toLowerCase() === "customer" ? "BUYER" : "SELLER";
 
     await prisma.user.create({
       data: {
