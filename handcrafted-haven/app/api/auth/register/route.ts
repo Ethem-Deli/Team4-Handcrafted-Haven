@@ -1,59 +1,60 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const {
       name,
       email,
       password,
-      role,
+      role, // "SELLER" or "BUYER"
       storeName,
       craftDescription,
     } = body;
 
-    if (!email || !password || !name) {
+    if (!name || !email || !password || !role) {
       return NextResponse.json(
-        { success: false, message: "Name, email and password are required." },
+        { success: false, message: "Missing required fields." },
         { status: 400 }
       );
     }
 
-    const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
       return NextResponse.json(
-        { success: false, message: "User with this email already exists." },
-        { status: 400 }
+        { success: false, message: "Email already registered." },
+        { status: 409 }
       );
     }
 
-    const hashed = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    const normalizedRole =
-      role && role.toLowerCase() === "customer" ? "BUYER" : "SELLER";
-
-    await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         name,
         email,
-        password: hashed,
-        role: normalizedRole,
-        storeName: normalizedRole === "SELLER" ? storeName : null,
+        password: hashedPassword,
+        role, // must match the Role enum ("SELLER" / "BUYER")
+        storeName: role === "SELLER" ? storeName ?? "" : null,
         craftDescription:
-          normalizedRole === "SELLER" ? craftDescription : null,
+          role === "SELLER" ? craftDescription ?? "" : null,
       },
     });
 
     return NextResponse.json(
-      { success: true, message: "Account created successfully." },
+      {
+        success: true,
+        message: "Account created successfully.",
+        user: { id: user.id, email: user.email, role: user.role },
+      },
       { status: 201 }
     );
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
+    console.error("REGISTER ERROR", err);
     return NextResponse.json(
-      { success: false, message: "Server error occurred" },
+      { success: false, message: "Something went wrong." },
       { status: 500 }
     );
   }

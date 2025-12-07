@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -8,104 +8,90 @@ import Link from "next/link";
 export default function SignInPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [error, setError] = useState("");
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
+
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(null);
     setLoading(true);
-    setError("");
 
     const formData = new FormData(e.currentTarget);
-    
-    const result = await signIn("credentials", {
-      email: formData.get("email"),
-      password: formData.get("password"),
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+
+    const res = await signIn("credentials", {
       redirect: false,
+      email,
+      password,
     });
 
-    if (result?.error) {
-      setError("Invalid email or password");
-      setLoading(false);
-    } else {
-      // Redirect to dashboard or the callback URL
-      const callbackUrl = searchParams.get("callbackUrl") || "/seller/dashboard";
-      router.push(callbackUrl);
-      router.refresh();
+    setLoading(false);
+
+    if (res?.error) {
+      setError("Invalid email or password.");
+      return;
     }
+
+    // After login, redirect based on user role
+    router.push("/auth/redirect");
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Seller Sign In
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Access your seller dashboard
-          </p>
+    <div className="min-h-screen flex items-center justify-center bg-[#F8F5F0] px-4">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-md bg-white shadow-lg rounded-xl p-6 space-y-4"
+      >
+        <h1 className="text-2xl font-semibold text-center">
+          Login to Your Account
+        </h1>
+
+        {error && (
+          <p className="text-red-600 text-sm text-center">{error}</p>
+        )}
+
+        <div className="space-y-1">
+          <label className="block text-sm font-medium">Email</label>
+          <input
+            type="email"
+            name="email"
+            className="w-full border rounded-lg px-3 py-2 outline-none"
+            required
+          />
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-50 text-red-500 p-3 rounded-md text-sm">
-              {error}
-            </div>
-          )}
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email" className="sr-only">
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-              />
-            </div>
-          </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-            >
-              {loading ? "Signing in..." : "Sign in"}
-            </button>
-          </div>
+        <div className="space-y-1">
+          <label className="block text-sm font-medium">Password</label>
+          <input
+            type="password"
+            name="password"
+            className="w-full border rounded-lg px-3 py-2 outline-none"
+            required
+          />
+        </div>
 
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              Don&apos;t have an account?{" "}
-              <Link
-                href="/auth/signup"
-                className="font-medium text-indigo-600 hover:text-indigo-500"
-              >
-                Create seller account
-              </Link>
-            </p>
-          </div>
-        </form>
-      </div>
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-green-700 text-white py-2 rounded-lg hover:bg-green-800 disabled:opacity-60"
+        >
+          {loading ? "Signing in..." : "Login"}
+        </button>
+
+        {/* Register Link */}
+        <p className="text-sm text-center text-gray-700">
+          Don’t have an account?{" "}
+          <Link
+            href="/auth/signup"
+            className="text-green-700 font-medium hover:underline"
+          >
+            Create an Account
+          </Link>
+        </p>
+      </form>
     </div>
   );
 }
