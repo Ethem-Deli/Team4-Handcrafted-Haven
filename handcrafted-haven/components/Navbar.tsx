@@ -96,14 +96,11 @@ export default function Navbar() {
               Login
               </Link> */}
               
-              <Link
-                href="/login">
-              <form action={logoutUser}>
-            <button className="ml-4 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
-                   Login
-            </button>
-                </form>
-                </Link>
+              <Link href="/auth/signin">
+              <button className="ml-4 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+               Login
+              </button>
+              </Link>
               
             <form action={logoutUser}>
             <button className="ml-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">

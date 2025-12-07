@@ -1,52 +1,91 @@
 "use client";
 
 import { useState } from "react";
-import { registerUser } from "../actions/register";
 import { useRouter } from "next/navigation";
 
 export default function JoinPage() {
   const router = useRouter();
   const [role, setRole] = useState<"customer" | "seller">("customer");
+  const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: any) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setLoading(true);
+
+    const form = e.currentTarget as HTMLFormElement;
 
     const formData = {
       role,
-      name: e.target.name.value,
-      email: e.target.email.value,
-      password: e.target.password.value,
-      storeName: role === "seller" ? e.target.storeName.value : "",
-      craftDescription: role === "seller" ? e.target.craftDescription.value : "",
+      name: (form.elements.namedItem("name") as HTMLInputElement).value,
+      email: (form.elements.namedItem("email") as HTMLInputElement).value,
+      password: (form.elements.namedItem("password") as HTMLInputElement).value,
+      storeName:
+        role === "seller"
+          ? (form.elements.namedItem("storeName") as HTMLInputElement).value
+          : "",
+      craftDescription:
+        role === "seller"
+          ? (form.elements.namedItem(
+              "craftDescription"
+            ) as HTMLTextAreaElement).value
+          : "",
     };
 
-    const res = await registerUser(formData);
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
 
-    if (!res.success) {
-      alert(res.message);
-      return;
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        alert(data.message || "Registration failed");
+        setLoading(false);
+        return;
+      }
+
+      alert("Account created! Please sign in.");
+      router.push("/auth/signin?registered=true");
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    alert("Account created!");
-    router.push("/login");
   }
 
   return (
     <div className="px-6 py-12 max-w-xl mx-auto text-gray-800">
-      <h1 className="text-4xl font-bold mb-6 text-center">Join Handcrafted Haven</h1>
+      <h1 className="text-4xl font-bold mb-6 text-center">
+        Join Handcrafted Haven
+      </h1>
 
-      <form onSubmit={handleSubmit} className="bg-white p-6 shadow-lg rounded-xl space-y-5">
-
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-6 shadow-lg rounded-xl space-y-5"
+      >
         {/* Role Selector */}
         <div>
           <label className="font-semibold">Register as:</label>
           <div className="mt-2 flex gap-4">
             <label className="flex items-center gap-2">
-              <input type="radio" name="role" checked={role === "customer"} onChange={() => setRole("customer")} />
+              <input
+                type="radio"
+                name="role"
+                checked={role === "customer"}
+                onChange={() => setRole("customer")}
+              />
               Customer
             </label>
             <label className="flex items-center gap-2">
-              <input type="radio" name="role" checked={role === "seller"} onChange={() => setRole("seller")} />
+              <input
+                type="radio"
+                name="role"
+                checked={role === "seller"}
+                onChange={() => setRole("seller")}
+              />
               Seller
             </label>
           </div>
@@ -61,13 +100,24 @@ export default function JoinPage() {
         {/* Email */}
         <div>
           <label className="font-semibold">Email</label>
-          <input name="email" type="email" required className="w-full border p-2 rounded-lg" />
+          <input
+            name="email"
+            type="email"
+            required
+            className="w-full border p-2 rounded-lg"
+          />
         </div>
 
         {/* Password */}
         <div>
           <label className="font-semibold">Password</label>
-          <input name="password" type="password" required className="w-full border p-2 rounded-lg" />
+          <input
+            name="password"
+            type="password"
+            required
+            minLength={8}
+            className="w-full border p-2 rounded-lg"
+          />
         </div>
 
         {/* Seller Fields */}
@@ -75,20 +125,30 @@ export default function JoinPage() {
           <>
             <div>
               <label className="font-semibold">Store Name</label>
-              <input name="storeName" required className="w-full border p-2 rounded-lg" />
+              <input
+                name="storeName"
+                required
+                className="w-full border p-2 rounded-lg"
+              />
             </div>
 
             <div>
               <label className="font-semibold">About Your Craft</label>
-              <textarea name="craftDescription" required className="w-full border p-2 rounded-lg h-24"></textarea>
+              <textarea
+                name="craftDescription"
+                required
+                className="w-full border p-2 rounded-lg h-24"
+              ></textarea>
             </div>
           </>
         )}
 
-        <button className="w-full py-3 bg-gray-800 text-white rounded-lg hover:bg-black">
-          Join Now
+        <button
+          disabled={loading}
+          className="w-full py-3 bg-gray-800 text-white rounded-lg hover:bg-black disabled:opacity-50"
+        >
+          {loading ? "Creating account..." : "Join Now"}
         </button>
-
       </form>
     </div>
   );
