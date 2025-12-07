@@ -1,46 +1,26 @@
+import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(req: NextRequest) {
-  const session = req.cookies.get("session")?.value;
+export async function middleware(req: NextRequest) {
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
   const path = req.nextUrl.pathname;
 
-  let user = null;
-
-  if (session) {
-    try {
-      user = JSON.parse(session);
-    } catch (err) {
-      console.error("Invalid session cookie");
-    }
+  // Protect Seller Routes
+  if (path.startsWith("/seller")) {
+    if (!token) return NextResponse.redirect(new URL("/auth/signin", req.url));
+    if (token.role !== "SELLER") return NextResponse.redirect(new URL("/", req.url));
   }
 
-  // PROTECT SELLER ROUTES //
-    if (path.startsWith("/seller")) {
-    if (!user) {
-      return NextResponse.redirect(new URL("/login", req.url));
-    }
-    if (user.role !== "seller") {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
-  }
-
-  // PROTECT CUSTOMER ROUTES //
-
+  // Protect Customer Routes (future)
   if (path.startsWith("/customer")) {
-    if (!user) {
-      return NextResponse.redirect(new URL("/login", req.url));
-    }
-    if (user.role !== "customer") {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
+    if (!token) return NextResponse.redirect(new URL("/auth/signin", req.url));
+    if (token.role !== "CUSTOMER") return NextResponse.redirect(new URL("/", req.url));
   }
 
   return NextResponse.next();
 }
 
-export { default } from "next-auth/middleware";
-
 export const config = {
-  matcher: ["/seller/:path*", "/api/seller/:path*"],
+  matcher: ["/seller/:path*"],
 };
