@@ -77,12 +77,12 @@ export default function Navbar() {
                   Login
                 </button>
               </Link>
-              <Link
+              {/* <Link
                 href="/auth/signup"
                 className="text-black underline hover:text-green-700 text-sm"
               >
                 Register
-              </Link>
+              </Link> */}
             </div>
           )}
         </div>

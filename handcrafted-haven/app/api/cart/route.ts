@@ -1,81 +1,90 @@
-import fs from "fs";
-import path from "path";
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/route";
 
-const filePath = path.join(process.cwd(), "data", "cart.json");
-
-function readCart() {
-  const raw = fs.readFileSync(filePath, "utf8");
-  return JSON.parse(raw);
-}
-function writeCart(json: any) {
-  fs.writeFileSync(filePath, JSON.stringify(json, null, 2));
+//  Get user ID from NextAuth
+async function getUserId() {
+  const session = await getServerSession(authOptions);
+  return session?.user ? (session.user as any).id : null;
 }
 
+//  GET CART
 export async function GET() {
-  const json = readCart();
-  return new Response(JSON.stringify(json), { headers: { "Content-Type": "application/json" } });
+  const userId = await getUserId();
+  if (!userId) return NextResponse.json({ cart: [] });
+
+  const cart = await prisma.cart.findUnique({
+    where: { userId },
+    include: { items: { include: { product: true } } },
+  });
+
+  return NextResponse.json({ cart: cart?.items ?? [] });
 }
 
-/**
- * POST -> add item to cart
- * body: { userId, product }  (product contains id, name, price, image)
- *
- * PUT -> update quantity
- * body: { userId, productId, quantity }
- *
- * DELETE -> remove cart item
- * body: { userId, productId }
- */
-export async function POST(req: Request) {
-  const body = await req.json();
-  const { userId, product } = body;
-  if (!userId || !product) return new Response("Bad Request", { status: 400 });
+//  POST (Add to cart)
+export async function POST(req: NextRequest) {
+  const userId = await getUserId();
+  if (!userId) return NextResponse.json({ guest: true }); // will use localStorage
 
-  const json = readCart();
+  const { productId } = await req.json();
+  if (!productId) return NextResponse.json({ error: "Missing productId" }, { status: 400 });
 
-  const existing = json.cart.find((c: any) => c.userId === userId && c.productId === product.id);
-  if (existing) existing.quantity += 1;
-  else {
-    json.cart.push({
-      userId,
-      productId: product.id,
-      name: product.name,
-      price: Number(product.price || 0),
-      image: product.image || "",
-      quantity: 1
+  let cart = await prisma.cart.findUnique({ where: { userId } });
+  if (!cart) cart = await prisma.cart.create({ data: { userId } });
+
+  const existing = await prisma.cartItem.findFirst({
+    where: { cartId: cart.id, productId },
+  });
+
+  if (existing) {
+    await prisma.cartItem.update({
+      where: { id: existing.id },
+      data: { quantity: existing.quantity + 1 },
+    });
+  } else {
+    await prisma.cartItem.create({
+      data: { cartId: cart.id, productId, quantity: 1 },
     });
   }
 
-  writeCart(json);
-  return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
+  return NextResponse.json({ success: true });
 }
 
-export async function PUT(req: Request) {
-  const body = await req.json();
-  const { userId, productId, quantity } = body;
-  if (!userId || !productId || typeof quantity !== "number") return new Response("Bad Request", { status: 400 });
+//  PUT (Change quantity)
+export async function PUT(req: NextRequest) {
+  const userId = await getUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const json = readCart();
-  const item = json.cart.find((c: any) => c.userId === userId && c.productId === productId);
-  if (!item) return new Response("Not Found", { status: 404 });
+  const { productId, quantity } = await req.json();
+  if (!productId || quantity == null) return NextResponse.json({ error: "Bad Request" }, { status: 400 });
+
+  const cart = await prisma.cart.findUnique({ where: { userId } });
+  if (!cart) return NextResponse.json({ error: "Cart not found" }, { status: 404 });
 
   if (quantity <= 0) {
-    json.cart = json.cart.filter((c: any) => !(c.userId === userId && c.productId === productId));
+    await prisma.cartItem.deleteMany({ where: { cartId: cart.id, productId } });
   } else {
-    item.quantity = quantity;
+    await prisma.cartItem.updateMany({
+      where: { cartId: cart.id, productId },
+      data: { quantity },
+    });
   }
 
-  writeCart(json);
-  return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
+  return NextResponse.json({ success: true });
 }
 
-export async function DELETE(req: Request) {
-  const body = await req.json();
-  const { userId, productId } = body;
-  if (!userId || !productId) return new Response("Bad Request", { status: 400 });
+//  DELETE (Remove Item)
+export async function DELETE(req: NextRequest) {
+  const userId = await getUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const json = readCart();
-  json.cart = json.cart.filter((c: any) => !(c.userId === userId && c.productId === productId));
-  writeCart(json);
-  return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
+  const { productId } = await req.json();
+  if (!productId) return NextResponse.json({ error: "Bad Request" }, { status: 400 });
+
+  const cart = await prisma.cart.findUnique({ where: { userId } });
+  if (!cart) return NextResponse.json({ error: "Not Found" }, { status: 404 });
+
+  await prisma.cartItem.deleteMany({ where: { cartId: cart.id, productId } });
+  return NextResponse.json({ success: true });
 }
