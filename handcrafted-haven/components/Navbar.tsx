@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import CartIcon from "@/components/CartIcon";
 import { useSession } from "next-auth/react";
@@ -13,6 +13,34 @@ export default function Navbar() {
   const router = useRouter();
   const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
+  
+  useEffect(() => {
+    async function syncGuestCart() {
+      if (!session?.user) return;
+      if (typeof window === "undefined") return;
+
+      const raw = localStorage.getItem("guest-cart");
+      if (!raw) return;
+
+      const guestItems = JSON.parse(raw) as { productId: number; quantity: number }[];
+      if (!Array.isArray(guestItems) || guestItems.length === 0) return;
+
+      await fetch("/api/cart/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: guestItems.map((i) => ({
+            productId: i.productId,
+            quantity: i.quantity,
+          })),
+        }),
+      });
+
+      localStorage.removeItem("guest-cart");
+    }
+
+    syncGuestCart();
+  }, [session?.user]);
 
   const handleSearch = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();

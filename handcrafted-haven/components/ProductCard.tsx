@@ -1,48 +1,48 @@
 "use client";
 
 import Image from "next/image";
-import React from "react";
 
 export type Product = {
   id: number;
-  name: string;
-  price: number;
-  image: string;
+  title: string;
   description: string;
-  category: string;
+  price: number;
+  image: string | null;
+  _count?: { orderItems: number };
 };
 
 type Props = {
   product: Product;
+  onAddToCart: (product: Product) => void; // 👈 pass handler from parent
 };
 
-const ProductCard: React.FC<Props> = ({ product }) => {
+export default function ProductCard({ product, onAddToCart }: Props) {
   return (
-    <div className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300">
+    <div className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col">
       <div className="relative w-full h-56">
-        <Image
-          src={product.image}
-          alt={product.name}
-          fill
-          className="object-cover"
-        />
+        {product.image ? (
+          <Image src={product.image} alt={product.title} fill className="object-cover" />
+        ) : (
+          <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">
+            No Image
+          </div>
+        )}
       </div>
-      <div className="p-4">
-        <h3 className="text-lg font-semibold text-gray-800">{product.name}</h3>
-        <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-          {product.description}
-        </p>
-        <div className="flex justify-between items-center mt-3">
-          <span className="text-lg font-bold text-green-700">
-            ${product.price.toFixed(2)}
-          </span>
-          <button className="bg-green-800 text-white text-sm px-4 py-1 rounded-xl hover:bg-green-700 transition">
-            Add to Cart
+
+      <div className="p-4 flex-1 flex flex-col">
+        <h3 className="text-lg font-semibold text-gray-800">{product.title}</h3>
+        <p className="text-sm text-gray-600 mt-1 line-clamp-2">{product.description}</p>
+
+        <div className="mt-auto flex items-center justify-between text-xs text-gray-500 pt-2">
+          <span>⭐ Popularity: {product._count?.orderItems ?? 0}</span>
+          <button
+            onClick={() => onAddToCart(product)}
+            className="text-emerald-700 font-medium hover:underline"
+          >
+            + Add to Cart
           </button>
         </div>
       </div>
     </div>
   );
-};
-
-export default ProductCard;
+}

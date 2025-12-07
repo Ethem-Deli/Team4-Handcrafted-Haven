@@ -27,27 +27,40 @@ type Product = {
   category?: Category | null;
   _count?: { orderItems: number };
 };
-async function addToCart(productId: number) {
+async function addToCart(product: Product) {
   const res = await fetch("/api/cart", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ productId })
+    body: JSON.stringify({ productId: product.id }),
   });
 
   const data = await res.json();
 
+  // Guest: store in localStorage
   if (data.guest) {
-    const cart = JSON.parse(localStorage.getItem("guest-cart") || "[]");
-    const exists = cart.find((i: any) => i.productId === productId);
-    if (exists) exists.quantity++;
-    else cart.push({ productId, quantity: 1 });
-    localStorage.setItem("guest-cart", JSON.stringify(cart));
-    alert("Added (Guest)");
-  } else {
-    alert("Product added to cart");
-  }
-}
+    const raw = localStorage.getItem("guest-cart") || "[]";
+    const cart = JSON.parse(raw) as any[];
 
+    const existing = cart.find((i) => i.productId === product.id);
+    if (existing) {
+      existing.quantity += 1;
+    } else {
+      cart.push({
+        productId: product.id,
+        title: product.title,
+        price: product.price,
+        image: product.image,
+        quantity: 1,
+      });
+    }
+
+    localStorage.setItem("guest-cart", JSON.stringify(cart));
+    alert("Added to cart (guest)");
+    return;
+  }
+
+  alert("Product added to cart");
+}
 
 export default function ShopPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -214,7 +227,7 @@ export default function ShopPage() {
                   <span>⭐ Popularity: {product._count?.orderItems ?? 0}</span>
                   <button className="text-emerald-700 font-medium hover:underline">View details</button>
                   <button
-                  onClick={() => addToCart(product.id)}
+                  onClick={() => addToCart(product)}
                   className="text-emerald-700 font-medium hover:underline">
                   + Add to Cart
                   </button>
