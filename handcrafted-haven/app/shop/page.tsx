@@ -25,8 +25,10 @@ type Product = {
   price: number;
   image: string | null;
   category?: Category | null;
+  avgRating?: number;
   _count?: { orderItems: number };
 };
+
 async function addToCart(product: Product) {
   const res = await fetch("/api/cart", {
     method: "POST",
@@ -55,7 +57,7 @@ async function addToCart(product: Product) {
     }
 
     localStorage.setItem("guest-cart", JSON.stringify(cart));
-    alert("Added to cart (guest)");
+    alert("Added to cart (Guest)");
     return;
   }
 
@@ -75,7 +77,7 @@ export default function ShopPage() {
 
   const debouncedSearch = useDebounce(search);
 
-  /*  Load categories once */
+  // Load categories once
   useEffect(() => {
     fetch("/api/categories")
       .then((res) => res.json())
@@ -83,7 +85,7 @@ export default function ShopPage() {
       .catch(() => setCategories([]));
   }, []);
 
-  /*  Load products when filters or search changes */
+  // Load products when filters or search changes
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
@@ -110,7 +112,7 @@ export default function ShopPage() {
         Shop All Products
       </h1>
 
-      {/* 🔎 FILTER BAR */}
+      {/* FILTER BAR */}
       <section className="bg-white rounded-xl shadow-md p-4 mb-8 flex flex-col md:flex-row gap-4 md:items-end md:justify-between">
 
         {/* Category */}
@@ -130,7 +132,7 @@ export default function ShopPage() {
           </select>
         </div>
 
-        {/* 🔍 Search */}
+        {/* Search */}
         <div className="flex flex-col w-full md:w-1/3">
           <label className="text-sm font-medium text-gray-700 mb-1">Search Products</label>
           <input
@@ -212,25 +214,49 @@ export default function ShopPage() {
               </div>
 
               <div className="flex-1 flex flex-col p-4">
+                
+                {/* Title & Price */}
                 <div className="flex items-center justify-between mb-1">
                   <h2 className="font-semibold text-gray-800 line-clamp-1">{product.title}</h2>
                   <span className="text-emerald-700 font-bold">${product.price.toFixed(2)}</span>
                 </div>
 
+                {/* Category */}
                 {product.category && (
                   <p className="text-xs text-gray-500 mb-2">{product.category.name}</p>
                 )}
 
+                {/* Description */}
                 <p className="text-sm text-gray-600 line-clamp-2 mb-3">{product.description}</p>
 
-                <div className="mt-auto flex items-center justify-between text-xs text-gray-500">
+                {/*Rating */}
+                <div className="flex items-center gap-1 text-yellow-500 text-sm mb-2">
+                  {"★".repeat(Math.round(product.avgRating || 0))}
+                  {"☆".repeat(5 - Math.round(product.avgRating || 0))}
+                  <span className="text-gray-500 ml-1">
+                    ({(product.avgRating || 0).toFixed(1)})
+                  </span>
+                </div>
+
+                {/* Popularity & Actions */}
+                <div className="flex justify-between items-center mt-auto text-xs text-gray-500">
                   <span>⭐ Popularity: {product._count?.orderItems ?? 0}</span>
-                  <button className="text-emerald-700 font-medium hover:underline">View details</button>
-                  <button
-                  onClick={() => addToCart(product)}
-                  className="text-emerald-700 font-medium hover:underline">
-                  + Add to Cart
-                  </button>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => window.location.href = `/product/${product.id}`}
+                      className="text-emerald-700 font-medium hover:underline"
+                    >
+                      View
+                    </button>
+
+                    <button
+                      onClick={() => addToCart(product)}
+                      className="text-emerald-700 font-medium hover:underline"
+                    >
+                      + Add
+                    </button>
+                  </div>
                 </div>
               </div>
             </article>

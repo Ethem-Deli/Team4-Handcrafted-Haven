@@ -5,7 +5,6 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-
   const categoryId = searchParams.get("categoryId") ?? undefined;
   const minPrice = parseFloat(searchParams.get("minPrice") ?? "0");
   const maxPrice = parseFloat(searchParams.get("maxPrice") ?? "100000");
@@ -21,11 +20,16 @@ export async function GET(req: NextRequest) {
     include: {
       _count: { select: { orderItems: true } },
       category: true,
+      reviews: true,
     },
-    orderBy: sort === "newest" ? { createdAt: "desc" } : undefined,
   });
 
-  let enriched = [...products];
+  const enriched = products.map((p) => ({
+    ...p,
+    avgRating: p.reviews.length
+      ? p.reviews.reduce((a, r) => a + r.rating, 0) / p.reviews.length
+      : 0,
+  }));
 
   if (sort === "popular") {
     enriched.sort(
