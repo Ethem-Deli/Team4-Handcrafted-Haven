@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ➤ Create order + items + reduce stock in 1 atomic step
-    const createdOrder = await prisma.$transaction(async (tx) => {
+    const createdOrder = await prisma.$transaction(async (tx: any) => {
       // Create order entry
       const order = await tx.order.create({
         data: { buyerId, status: "PENDING" }
