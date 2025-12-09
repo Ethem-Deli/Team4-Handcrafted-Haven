@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import type { Prisma, PrismaClient } from "@prisma/client";
 
 /** Order items coming from the frontend */
 type OrderItemInput = {
@@ -70,38 +71,49 @@ export async function POST(req: NextRequest) {
     }
 
     // Transaction: Create order, items, and adjust stock
-    const createdOrder = await prisma.$transaction(async (tx) => {
-      // Create order record
-      const order = await tx.order.create({
-        data: {
-          buyerId,
-          status: "PENDING",
-        },
-      });
-
-      // Create order items + update stock
-      for (const item of items) {
-        const product = products.find(
-          (p: ProductType) => p.id === item.productId
-        ) as ProductType;
-
-        await tx.orderItem.create({
+    const createdOrder = await prisma.$transaction(
+      async (
+        tx: Omit<
+          PrismaClient<
+            Prisma.PrismaClientOptions,
+            never,
+            Prisma.RejectPerOperation
+          >,
+          "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
+        >
+      ) => {
+        // Create order record
+        const order = await tx.order.create({
           data: {
-            orderId: order.id,
-            productId: product.id,
-            quantity: item.quantity,
-            price: product.price,
+            buyerId,
+            status: "PENDING",
           },
         });
 
-        await tx.product.update({
-          where: { id: product.id },
-          data: { stock: product.stock - item.quantity },
-        });
-      }
+        // Create order items + update stock
+        for (const item of items) {
+          const product = products.find(
+            (p: ProductType) => p.id === item.productId
+          ) as ProductType;
 
-      return order;
-    });
+          await tx.orderItem.create({
+            data: {
+              orderId: order.id,
+              productId: product.id,
+              quantity: item.quantity,
+              price: product.price,
+            },
+          });
+
+          await tx.product.update({
+            where: { id: product.id },
+            data: { stock: product.stock - item.quantity },
+          });
+        }
+
+        return order;
+      }
+    );
 
     return NextResponse.json({ orderId: createdOrder.id }, { status: 201 });
   } catch (error: any) {
