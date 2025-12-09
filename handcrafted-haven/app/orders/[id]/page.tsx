@@ -39,11 +39,13 @@ async function updateOrderStatus(formData: FormData) {
   revalidatePath(`/orders/${orderId}`);
 }
 
-export default async function OrderDetailsPage({ params }: { params: { id: string } }) {
+export default async function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const orderId = Number(id);
+
   const session = await getServerSession(authOptions);
   if (!session) redirect("/auth/signin");
 
-  const orderId = Number(params.id);
   const sellerId = Number((session.user as any).id);
 
   const order = await prisma.order.findFirst({
