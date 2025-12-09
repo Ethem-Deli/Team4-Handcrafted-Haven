@@ -45,12 +45,17 @@ export async function GET(req: NextRequest) {
 
   if (sort === "popular") {
     enriched.sort(
-      (a, b) => (b._count.orderItems ?? 0) - (a._count.orderItems ?? 0)
+      (a: ProductWithExtras, b: ProductWithExtras) =>
+        (b._count.orderItems ?? 0) - (a._count.orderItems ?? 0)
     );
   } else if (sort === "price-asc") {
-    enriched.sort((a, b) => a.price - b.price);
+    enriched.sort(
+      (a: ProductWithExtras, b: ProductWithExtras) => a.price - b.price
+    );
   } else if (sort === "price-desc") {
-    enriched.sort((a, b) => b.price - a.price);
+    enriched.sort(
+      (a: ProductWithExtras, b: ProductWithExtras) => b.price - a.price
+    );
   }
 
   return NextResponse.json({ products: enriched });
