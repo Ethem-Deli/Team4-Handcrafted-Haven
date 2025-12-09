@@ -40,11 +40,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Verify stock before transaction
     for (const item of items) {
-      const product = products.find(
-        (p: { id: number }) => p.id === item.productId
-      );
+      const product = products.find((p) => p.id === item.productId);
       if (!product) {
         return NextResponse.json(
           { message: "Product not found" },
@@ -58,41 +55,49 @@ export async function POST(req: NextRequest) {
         );
       }
     }
-    const order = await prisma.$transaction(async (tx) => {
-  const createdOrder = await tx.order.create({
-    data: {
-      buyerId,
-      status: "PENDING",
-    },
-  });
 
-  for (const item of items) {
-    const product = products.find((p) => p.id === item.productId)!;
-
-    await tx.orderItem.create({
+    // CREATE ORDER FIRST (separate)
+    const createdOrder = await prisma.order.create({
       data: {
-        orderId: createdOrder.id,
-        productId: product.id,
-        quantity: item.quantity,
-        price: product.price,
+        buyerId,
+        status: "PENDING",
       },
     });
 
-    await tx.product.update({
-      where: { id: product.id },
-      data: { stock: product.stock - item.quantity },
-    });
-  }
+    // BUILD TRANSACTION QUERIES
+    const operations = [];
 
-  return createdOrder;
-});
+    for (const item of items) {
+      const product = products.find((p) => p.id === item.productId)!;
 
-    return NextResponse.json({ orderId: order.id }, { status: 201 });
+      operations.push(
+        prisma.orderItem.create({
+          data: {
+            orderId: createdOrder.id,
+            productId: product.id,
+            quantity: item.quantity,
+            price: product.price,
+          },
+        })
+      );
+
+      operations.push(
+        prisma.product.update({
+          where: { id: product.id },
+          data: { stock: product.stock - item.quantity },
+        })
+      );
+    }
+
+    // EXECUTE TRANSACTION
+    await prisma.$transaction(operations);
+
+    return NextResponse.json({ orderId: createdOrder.id }, { status: 201 });
   } catch (error: any) {
     console.error("Order creation error:", error);
     return NextResponse.json(
       { message: "Server error", error: error?.message },
       { status: 500 }
     );
-  } 
+  }
 }
