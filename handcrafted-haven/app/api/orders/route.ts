@@ -2,15 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import type { Prisma, PrismaClient } from "@prisma/client";
 
-/** Order items coming from the frontend */
+/** Order items from frontend */
 type OrderItemInput = {
   productId: number;
   quantity: number;
 };
 
-/** Minimal Product type we use for validations */
+/** Minimal Product shape */
 type ProductType = {
   id: number;
   stock: number;
@@ -20,7 +19,7 @@ type ProductType = {
 
 export async function POST(req: NextRequest) {
   try {
-    // Check session (must be logged in)
+    // Session check
     const session = await getServerSession(authOptions);
     if (!session || !session.user) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -36,14 +35,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "No items in order" }, { status: 400 });
     }
 
-    // Find products the user wants to order
+    // Products requested
     const productIds = items.map((i) => i.productId);
 
     const products = await prisma.product.findMany({
-      where: { id: { in: productIds } },
+      where: { id: { in: productIds } }
     });
 
-    // Ensure products exist in DB
+    // Validate product existence
     if (products.length !== items.length) {
       return NextResponse.json(
         { message: "One or more products not found" },
@@ -51,14 +50,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check stock availability BEFORE transaction
+    // Validate stock BEFORE creating
     for (const item of items) {
       const product = products.find(
         (p: ProductType) => p.id === item.productId
       );
       if (!product) {
         return NextResponse.json(
-          { message: `Product not found` },
+          { message: "Product not found" },
           { status: 400 }
         );
       }
@@ -70,52 +69,39 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Transaction: Create order, items, and adjust stock
-    const createdOrder = await prisma.$transaction(
-      async (
-        tx: Omit<
-          PrismaClient<
-            Prisma.PrismaClientOptions,
-            never,
-            Prisma.RejectPerOperation
-          >,
-          "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
-        >
-      ) => {
-        // Create order record
-        const order = await tx.order.create({
+    // ➤ Create order + items + reduce stock in 1 atomic step
+    const createdOrder = await prisma.$transaction(async (tx) => {
+      // Create order entry
+      const order = await tx.order.create({
+        data: { buyerId, status: "PENDING" }
+      });
+
+      // Insert items + update stock
+      for (const item of items) {
+        const product = products.find(
+          (p: ProductType) => p.id === item.productId
+        ) as ProductType;
+
+        await tx.orderItem.create({
           data: {
-            buyerId,
-            status: "PENDING",
-          },
+            orderId: order.id,
+            productId: product.id,
+            quantity: item.quantity,
+            price: product.price
+          }
         });
 
-        // Create order items + update stock
-        for (const item of items) {
-          const product = products.find(
-            (p: ProductType) => p.id === item.productId
-          ) as ProductType;
-
-          await tx.orderItem.create({
-            data: {
-              orderId: order.id,
-              productId: product.id,
-              quantity: item.quantity,
-              price: product.price,
-            },
-          });
-
-          await tx.product.update({
-            where: { id: product.id },
-            data: { stock: product.stock - item.quantity },
-          });
-        }
-
-        return order;
+        await tx.product.update({
+          where: { id: product.id },
+          data: { stock: product.stock - item.quantity }
+        });
       }
-    );
+
+      return order;
+    });
 
     return NextResponse.json({ orderId: createdOrder.id }, { status: 201 });
+
   } catch (error: any) {
     console.error("Order creation error:", error);
     return NextResponse.json(
