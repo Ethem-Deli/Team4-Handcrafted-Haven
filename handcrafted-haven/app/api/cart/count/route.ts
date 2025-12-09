@@ -22,9 +22,13 @@ export async function GET() {
       include: { items: true },
     });
 
-    return NextResponse.json({
-      count: cart?.items.reduce((sum, item) => sum + item.quantity, 0) || 0,
-    });
+    // 🔧 FIXED reduce types here
+    const count = cart?.items.reduce(
+      (sum: number, item: { quantity: number }) => sum + item.quantity,
+      0
+    ) || 0;
+
+    return NextResponse.json({ count });
 
   } catch (error) {
     console.error("Cart count error:", error);
