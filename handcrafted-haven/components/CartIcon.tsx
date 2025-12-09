@@ -7,35 +7,34 @@ import Image from "next/image";
 export default function CartIcon() {
   const [count, setCount] = useState(0);
 
-  async function loadCount() {
-    const user =
-      typeof window !== "undefined"
-        ? JSON.parse(localStorage.getItem("user") || "null")
-        : null;
-
-    if (!user) {
+  async function fetchCount() {
+    try {
+      const res = await fetch("/api/cart/count", { cache: "no-store" });
+      const data = await res.json();
+      setCount(data.count || 0);
+    } catch {
       setCount(0);
-      return;
     }
-
-    const res = await fetch("/api/cart");
-    const data = await res.json();
-
-    const my = data.cart.filter((c: any) => c.userId === user.id);
-    const total = my.reduce((s: number, i: any) => s + i.quantity, 0);
-
-    setCount(total);
   }
 
   useEffect(() => {
-    loadCount();
-    const id = setInterval(loadCount, 5000);
-    return () => clearInterval(id);
+    fetchCount();
+
+    // Instant refresh when an item is added
+    const update = () => fetchCount();
+    window.addEventListener("cartUpdated", update);
+
+    // Periodic fallback refresh every 10 seconds
+    const interval = setInterval(fetchCount, 10000);
+
+    return () => {
+      window.removeEventListener("cartUpdated", update);
+      clearInterval(interval);
+    };
   }, []);
 
   return (
     <Link href="/cart" className="relative inline-block">
-      {/* upload the SVG icon here if need to change */}
       <Image
         src="/icons/cart.svg"
         alt="Cart"

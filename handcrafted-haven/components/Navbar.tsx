@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { Menu, X } from "lucide-react";
 import CartIcon from "@/components/CartIcon";
 import { useSession } from "next-auth/react";
@@ -13,34 +13,6 @@ export default function Navbar() {
   const router = useRouter();
   const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
-  
-  useEffect(() => {
-    async function syncGuestCart() {
-      if (!session?.user) return;
-      if (typeof window === "undefined") return;
-
-      const raw = localStorage.getItem("guest-cart");
-      if (!raw) return;
-
-      const guestItems = JSON.parse(raw) as { productId: number; quantity: number }[];
-      if (!Array.isArray(guestItems) || guestItems.length === 0) return;
-
-      await fetch("/api/cart/import", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: guestItems.map((i) => ({
-            productId: i.productId,
-            quantity: i.quantity,
-          })),
-        }),
-      });
-
-      localStorage.removeItem("guest-cart");
-    }
-
-    syncGuestCart();
-  }, [session?.user]);
 
   const handleSearch = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -67,7 +39,7 @@ export default function Navbar() {
           <span className="font-semibold text-xl">Handcrafted Haven</span>
         </Link>
 
-        {/* HAMBURGER BUTTON (Mobile) */}
+        {/* HAMBURGER (Mobile) */}
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="md:hidden"
@@ -76,26 +48,26 @@ export default function Navbar() {
           {isOpen ? <X size={30} /> : <Menu size={30} />}
         </button>
 
-        {/* DESKTOP MENU */}
+        {/*  DESKTOP MENU  */}
         <div className="hidden md:flex items-center gap-6">
           <div className="flex gap-4">
             <Link className="nav-link" href="/">Home</Link>
             <Link className="nav-link" href="/shop">Shop</Link>
             <Link className="nav-link" href="/about">About</Link>
-
-            {/* SEARCH PAGE */}
             <Link className="nav-link" href="/search">Search</Link>
 
-            {/* SELLER–ONLY LINK */}
+            {/* Seller Dashboard Link */}
             {session?.user && (session.user as any).role === "SELLER" && (
-              <Link className="nav-link" href="/seller">Seller Dashboard</Link>
+              <Link className="nav-link" href="/seller">
+                Seller Dashboard
+              </Link>
             )}
           </div>
 
-          {/* CART ICON */}
+          {/*  CART ICON */}
           <CartIcon />
 
-          {/* USER MENU or LOGIN/REGISTER */}
+          {/*  USER MENU / LOGIN */}
           {session?.user ? (
             <UserMenu />
           ) : (
@@ -105,28 +77,21 @@ export default function Navbar() {
                   Login
                 </button>
               </Link>
-              {/* <Link
-                href="/auth/signup"
-                className="text-black underline hover:text-green-700 text-sm"
-              >
-                Register
-              </Link> */}
             </div>
           )}
         </div>
       </div>
 
-      {/* MOBILE MENU */}
+      {/*  MOBILE MENU  */}
       {isOpen && (
         <div className="md:hidden mt-4 space-y-4">
           <div className="flex flex-col gap-3">
-
             <Link href="/" className="nav-mobile">Home</Link>
             <Link href="/shop" className="nav-mobile">Shop</Link>
             <Link href="/about" className="nav-mobile">About</Link>
             <Link href="/search" className="nav-mobile">Search</Link>
 
-            {/* SEARCH BAR MOBILE */}
+            {/* Mobile Search */}
             <form
               onSubmit={handleSearch}
               className="flex items-center border rounded-lg overflow-hidden bg-white"
@@ -141,14 +106,14 @@ export default function Navbar() {
               </button>
             </form>
 
-            {/* SELLER–ONLY LINK */}
+            {/* Seller Dashboard (Mobile) */}
             {session?.user && (session.user as any).role === "SELLER" && (
               <Link href="/seller" className="nav-mobile font-semibold">
                 Seller Dashboard
               </Link>
             )}
 
-            {/* AUTH SECTION */}
+            {/* Auth (Mobile) */}
             {session?.user ? (
               <UserMenu />
             ) : (

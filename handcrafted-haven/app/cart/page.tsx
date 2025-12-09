@@ -1,219 +1,156 @@
-"use client";
+import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";import Image from "next/image";
+import Link from "next/link";
+import { revalidatePath } from "next/cache";
 
-import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+// SERVER ACTIONS
+async function increaseAction(formData: FormData) {
+  "use server";
+  const id = Number(formData.get("itemId"));
+  await prisma.cartItem.update({
+    where: { id },
+    data: { quantity: { increment: 1 } },
+  });
+  revalidatePath("/cart");
+}
 
-type DbCartItem = {
-  id: number;
-  quantity: number;
-  product: {
-    id: number;
-    title: string;
-    price: number;
-    image: string | null;
-  };
-};
+async function decreaseAction(formData: FormData) {
+  "use server";
+  const id = Number(formData.get("itemId"));
+  const item = await prisma.cartItem.findUnique({ where: { id } });
 
-type GuestCartItem = {
-  productId: number;
-  title: string;
-  price: number;
-  image?: string | null;
-  quantity: number;
-};
-
-type UnifiedItem = {
-  productId: number;
-  title: string;
-  price: number;
-  image?: string | null;
-  quantity: number;
-};
-
-export default function CartPage() {
-  const { data: session, status } = useSession();
-  const [items, setItems] = useState<UnifiedItem[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  // Load cart depending on login status
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-
-      // Logged-in: load from API
-      if (status === "authenticated") {
-        const res = await fetch("/api/cart");
-        const data = await res.json();
-        const dbItems = (data.items || []) as DbCartItem[];
-
-        const mapped: UnifiedItem[] = dbItems.map((i) => ({
-          productId: i.product.id,
-          title: i.product.title,
-          price: i.product.price,
-          image: i.product.image,
-          quantity: i.quantity,
-        }));
-
-        setItems(mapped);
-        setLoading(false);
-        return;
-      }
-
-      // Guest: load from localStorage
-      if (status === "unauthenticated") {
-        if (typeof window !== "undefined") {
-          const raw = localStorage.getItem("guest-cart") || "[]";
-          const guestItems = JSON.parse(raw) as GuestCartItem[];
-          setItems(
-            guestItems.map((g) => ({
-              productId: g.productId,
-              title: g.title,
-              price: g.price,
-              image: g.image,
-              quantity: g.quantity,
-            }))
-          );
-        }
-        setLoading(false);
-      }
-    }
-
-    load();
-  }, [status]);
-
-  const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-
-  async function changeQuantity(productId: number, newQty: number) {
-    // Guest
-    if (status === "unauthenticated") {
-      if (typeof window === "undefined") return;
-      const raw = localStorage.getItem("guest-cart") || "[]";
-      let guestItems = JSON.parse(raw) as GuestCartItem[];
-
-      if (newQty <= 0) {
-        guestItems = guestItems.filter((g) => g.productId !== productId);
-      } else {
-        guestItems = guestItems.map((g) =>
-          g.productId === productId ? { ...g, quantity: newQty } : g
-        );
-      }
-
-      localStorage.setItem("guest-cart", JSON.stringify(guestItems));
-      setItems(
-        guestItems.map((g) => ({
-          productId: g.productId,
-          title: g.title,
-          price: g.price,
-          image: g.image,
-          quantity: g.quantity,
-        }))
-      );
-      return;
-    }
-
-    // Logged-in
-    await fetch("/api/cart", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productId, quantity: newQty }),
+  if (item && item.quantity > 1) {
+    await prisma.cartItem.update({
+      where: { id },
+      data: { quantity: { decrement: 1 } },
     });
+  } else {
+    await prisma.cartItem.delete({ where: { id } });
+  }
+  revalidatePath("/cart");
+}
 
-    // reload
-    const res = await fetch("/api/cart");
-    const data = await res.json();
-    const dbItems = (data.items || []) as DbCartItem[];
-    setItems(
-      dbItems.map((i) => ({
-        productId: i.product.id,
-        title: i.product.title,
-        price: i.product.price,
-        image: i.product.image,
-        quantity: i.quantity,
-      }))
+async function removeAction(formData: FormData) {
+  "use server";
+  const id = Number(formData.get("itemId"));
+  await prisma.cartItem.delete({ where: { id } });
+  revalidatePath("/cart");
+}
+
+// PAGE
+export default async function CartPage() {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    return (
+      <div className="p-10 text-center">
+        <p className="text-lg">You must be logged in to view your cart.</p>
+        <Link
+          href="/auth/signin"
+          className="mt-4 inline-block bg-green-600 text-white px-6 py-2 rounded-md"
+        >
+          Login
+        </Link>
+      </div>
     );
   }
 
-  async function removeItem(productId: number) {
-    await changeQuantity(productId, 0);
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email! },
+  });
+
+  const cart = await prisma.cart.findUnique({
+    where: { userId: user!.id },
+    include: { items: { include: { product: true } } },
+  });
+
+  if (!cart || cart.items.length === 0) {
+    return (
+      <div className="p-10 text-center">
+        <h1 className="text-3xl font-bold mb-4">Your Cart</h1>
+        <p className="text-gray-600">Your cart is empty.</p>
+        <Link
+          href="/shop"
+          className="mt-6 inline-block bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600"
+        >
+          Go Shopping 🛍️
+        </Link>
+      </div>
+    );
   }
 
+  const total = cart.items.reduce(
+    (sum, item) => sum + item.quantity * item.product.price,
+    0
+  );
+
   return (
-    <div className="px-6 py-10 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Your Cart</h1>
+    <main className="p-10 max-w-5xl mx-auto">
+      <h1 className="text-3xl font-bold mb-8">Your Cart</h1>
 
-      {loading && <p>Loading...</p>}
-
-      {!loading && items.length === 0 && (
-        <p>Your cart is empty.</p>
-      )}
-
-      <div className="space-y-4">
-        {items.map((item) => (
+      <div className="space-y-6">
+        {cart.items.map((item) => (
           <div
-            key={item.productId}
-            className="flex gap-4 items-center bg-white p-4 rounded shadow"
+            key={item.id}
+            className="flex items-center justify-between border-b pb-4"
           >
-            {item.image && (
-              <img
-                src={item.image}
-                alt={item.title}
-                className="w-24 h-24 object-cover rounded"
+            <div className="flex items-center gap-4">
+              <Image
+                src={item.product.image || "/images/placeholder.png"}
+                alt={item.product.title}
+                width={90}
+                height={90}
+                className="rounded-md object-cover"
               />
-            )}
-            <div className="flex-1">
-              <h2 className="font-semibold">{item.title}</h2>
-              <p className="text-gray-600">${item.price.toFixed(2)}</p>
-              <div className="mt-2 flex items-center gap-2">
-                <button
-                  onClick={() => changeQuantity(item.productId, item.quantity - 1)}
-                  className="px-3 py-1 border rounded"
-                >
-                  -
-                </button>
-
-                <span className="px-3">{item.quantity}</span>
-
-                <button
-                  onClick={() => changeQuantity(item.productId, item.quantity + 1)}
-                  className="px-3 py-1 border rounded"
-                >
-                  +
-                </button>
-
-                <button
-                  onClick={() => removeItem(item.productId)}
-                  className="ml-4 text-red-600 hover:underline"
-                >
-                  Remove
-                </button>
+              <div>
+                <h2 className="text-lg font-semibold">{item.product.title}</h2>
+                <p className="text-gray-600">
+                  ${item.product.price.toFixed(2)} × {item.quantity}
+                </p>
+                <p className="font-bold text-green-700">
+                  ${(item.product.price * item.quantity).toFixed(2)}
+                </p>
               </div>
             </div>
 
-            <div className="text-right">
-              <p className="font-bold">
-                ${(item.price * item.quantity).toFixed(2)}
-              </p>
+            <div className="flex gap-2">
+              {/* DECREASE */}
+              <form action={decreaseAction}>
+                <input type="hidden" name="itemId" value={item.id} />
+                <button className="px-3 py-1 bg-gray-200 rounded">-</button>
+              </form>
+
+              {/* INCREASE */}
+              <form action={increaseAction}>
+                <input type="hidden" name="itemId" value={item.id} />
+                <button className="px-3 py-1 bg-gray-200 rounded">+</button>
+              </form>
+
+              {/* REMOVE */}
+              <form action={removeAction}>
+                <input type="hidden" name="itemId" value={item.id} />
+                <button className="px-3 py-1 bg-red-600 text-white rounded">
+                  Remove
+                </button>
+              </form>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="mt-6 text-right">
-        <p className="text-xl font-semibold">Total: ${total.toFixed(2)}</p>
-
-        {/* Checkout button – protected by login */}
-        <a
-          href={
-            status === "authenticated"
-              ? "/checkout"
-              : "/auth/signin?callbackUrl=/checkout"
-          }
+      <div className="mt-10 text-right">
+        <h2 className="text-2xl font-bold">Total: ${total.toFixed(2)}</h2>
+        <Link
+          href="/shop"
+          className="mt-6 inline-block bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600"
         >
-          <button className="mt-4 bg-gray-800 text-white px-5 py-2 rounded">
-            Proceed to Checkout
-          </button>
-        </a>
+          Back to Shopping 🛍️
+        </Link>
+        <button className="mt-4 bg-blue-600 text-white px-8 py-2 rounded-lg hover:bg-blue-700">
+          Checkout
+        </button>
       </div>
-    </div>
+    </main>
   );
 }

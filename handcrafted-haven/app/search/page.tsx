@@ -1,83 +1,87 @@
 "use client";
 
-import { useState, use } from "react";
-import Fuse from "fuse.js";
-import { products } from "@/data/products";
-import { sellers, Seller } from "@/data/sellers";
+import { useState, use, useEffect } from "react";
 
-// Local Product type
+// DB Product type
 interface Product {
   id: number;
-  name: string;
+  title: string;
   price: number;
-  image: string;
+  image: string | null;
   description: string;
-  category: string;
+  category?: { name: string };
+  user: { name: string | null; storeName: string | null };
 }
 
-// Next.js 16 searchParams are ASYNC
+// DB Seller type
+interface Seller {
+  id: number;
+  name: string | null;
+  storeName: string | null;
+  craftDescription: string | null;
+}
+
 interface Props {
   searchParams: Promise<{ q?: string }>;
 }
 
 // Highlight matched substring
-function highlight(text: string, query: string) {
-  if (!query) return text;
+function highlight(text: string | null, query: string) {
+  if (!text) return "";
   const regex = new RegExp(`(${query})`, "gi");
   return text.replace(regex, "<mark>$1</mark>");
 }
 
 export default function SearchPage({ searchParams }: Props) {
-  // FIX: unwrap async searchParams using use()
   const params = use(searchParams);
   const initialQuery = (params?.q || "").trim();
 
   const [query, setQuery] = useState(initialQuery);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [sellers, setSellers] = useState<Seller[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+
   const [minPrice, setMinPrice] = useState(0);
   const [maxPrice, setMaxPrice] = useState(9999);
   const [selectedCategory, setSelectedCategory] = useState("all");
 
-  // Fuzzy search config
-  const fuseProducts = new Fuse(products as Product[], {
-    keys: ["name", "description", "category"],
-    threshold: 0.35,
-  });
+  // Fetch DB categories only once
+  useEffect(() => {
+    async function loadCats() {
+      const res = await fetch("/api/categories", { cache: "no-store" });
+      const data = await res.json();
+      setCategories(data.categories.map((c: any) => c.name.toLowerCase()));
+    }
+    loadCats();
+  }, []);
 
-  const fuseSellers = new Fuse(sellers, {
-    keys: ["name"],
-    threshold: 0.3,
-  });
+  // Fetch DB results when query changes
+  useEffect(() => {
+    if (!query) return;
 
-  const productResults = query
-    ? fuseProducts.search(query).map((r) => r.item)
-    : (products as Product[]);
+    async function fetchData() {
+      const res = await fetch(`/api/search?q=${query}`, { cache: "no-store" });
+      const data = await res.json();
+      setProducts(data.products || []);
+      setSellers(data.sellers || []);
+    }
 
-  const sellerResults = query
-    ? fuseSellers.search(query).map((r) => r.item)
-    : sellers;
+    fetchData();
+  }, [query]);
 
-  const filteredProducts = productResults.filter((p) => {
+  const filteredProducts = products.filter((p) => {
     const priceOK = p.price >= minPrice && p.price <= maxPrice;
     const categoryOK =
-      selectedCategory === "all" || p.category === selectedCategory;
+      selectedCategory === "all" ||
+      p.category?.name?.toLowerCase() === selectedCategory.toLowerCase();
     return priceOK && categoryOK;
   });
 
-  const noResults =
-    filteredProducts.length === 0 && sellerResults.length === 0;
-
-  const categories = Array.from(
-  new Set(
-    products
-      .map((p: any) => p.category?.trim().toLowerCase())
-      .filter(Boolean) // removes undefined / null / empty
-  )
-);
-
+  const noResults = filteredProducts.length === 0 && sellers.length === 0;
 
   return (
     <div className="p-10">
-      <h1 className="text-3xl font-bold mb-6">Enhanced Search</h1>
+      <h1 className="text-3xl font-bold mb-6">Search</h1>
 
       {/* Search Filters */}
       <div className="flex gap-4 mb-8 items-end">
@@ -85,10 +89,11 @@ export default function SearchPage({ searchParams }: Props) {
         <div className="flex flex-col w-1/3">
           <label className="font-medium mb-1">Search</label>
           <input
-            type="text"
             className="border p-2 rounded"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            type="text"
+            placeholder="Search by name or description..."
           />
         </div>
 
@@ -113,10 +118,10 @@ export default function SearchPage({ searchParams }: Props) {
         <div className="flex flex-col w-1/6">
           <label className="font-medium mb-1">Min Price</label>
           <input
-            type="number"
             className="border p-2 rounded"
             value={minPrice}
             onChange={(e) => setMinPrice(Number(e.target.value))}
+            type="number"
           />
         </div>
 
@@ -124,20 +129,18 @@ export default function SearchPage({ searchParams }: Props) {
         <div className="flex flex-col w-1/6">
           <label className="font-medium mb-1">Max Price</label>
           <input
-            type="number"
             className="border p-2 rounded"
             value={maxPrice}
             onChange={(e) => setMaxPrice(Number(e.target.value))}
+            type="number"
           />
         </div>
       </div>
 
-      {/* No Results */}
       {noResults && (
         <div className="text-gray-600 text-lg border p-6 rounded-lg bg-gray-50 max-w-lg">
           <strong>No results found.</strong>
-          <br /> No matches for:{" "}
-          <span className="font-medium">{query}</span>
+          <br /> No matches for: <span className="font-medium">{query}</span>
         </div>
       )}
 
@@ -152,15 +155,15 @@ export default function SearchPage({ searchParams }: Props) {
                 className="border rounded-lg overflow-hidden shadow-md bg-white hover:shadow-lg transition"
               >
                 <img
-                  src={product.image}
-                  alt={product.name}
+                  src={product.image || "/placeholder.png"}
+                  alt={product.title}
                   className="w-full h-48 object-cover"
                 />
                 <div className="p-4">
                   <h3
                     className="text-xl font-semibold"
                     dangerouslySetInnerHTML={{
-                      __html: highlight(product.name, query),
+                      __html: highlight(product.title, query),
                     }}
                   />
                   <p
@@ -169,6 +172,10 @@ export default function SearchPage({ searchParams }: Props) {
                       __html: highlight(product.description, query),
                     }}
                   />
+                  <p className="text-sm text-gray-500">
+                    Sold by:{" "}
+                    {product.user.storeName || product.user.name || "Seller"}
+                  </p>
                   <p className="text-lg font-bold mt-3">
                     ${product.price.toFixed(2)}
                   </p>
@@ -180,26 +187,24 @@ export default function SearchPage({ searchParams }: Props) {
       )}
 
       {/* Sellers */}
-      {sellerResults.length > 0 && (
+      {sellers.length > 0 && (
         <>
           <h2 className="text-2xl font-semibold mb-4 mt-10">Sellers</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {sellerResults.map((seller) => (
+            {sellers.map((seller) => (
               <div
                 key={seller.id}
-                className="border p-4 rounded-lg shadow hover:shadow-lg transition bg-white flex flex-col items-center"
+                className="border p-4 rounded-lg shadow hover:shadow-lg transition bg-white flex flex-col items-center text-center"
               >
-                <img
-                  src={seller.img}
-                  alt={seller.name}
-                  className="w-32 h-32 object-cover rounded-full mb-3"
-                />
                 <h3
-                  className="text-xl font-semibold text-center"
+                  className="text-xl font-semibold"
                   dangerouslySetInnerHTML={{
-                    __html: highlight(seller.name, query),
+                    __html: highlight(seller.storeName || seller.name || "", query),
                   }}
                 />
+                <p className="text-gray-600 mt-1">
+                  {seller.craftDescription || "Amazing handmade crafts!"}
+                </p>
               </div>
             ))}
           </div>

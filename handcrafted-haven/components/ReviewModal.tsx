@@ -18,13 +18,15 @@ export default function ReviewModal({ productId, onClose, onSuccess }: Props) {
 
   async function submitReview() {
     if (!session?.user) {
-      window.location.href = "/auth/signin?callbackUrl=/product/" + productId;
+      // Redirect to login then back to the product page
+      window.location.href = `/auth/signin?callbackUrl=/products/${productId}`;
       return;
     }
 
     setLoading(true);
 
-    const res = await fetch("/api/reviews", {
+    // 🔥 Correct API endpoint
+    const res = await fetch("/api/reviews/add", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ productId, rating, comment }),
@@ -34,8 +36,8 @@ export default function ReviewModal({ productId, onClose, onSuccess }: Props) {
 
     if (res.ok) {
       alert("Review posted!");
-      onSuccess();
-      onClose();
+      onSuccess(); // Refresh page data
+      onClose();   // Close the modal
     } else {
       alert("Failed to post review");
     }
@@ -46,7 +48,7 @@ export default function ReviewModal({ productId, onClose, onSuccess }: Props) {
       <div className="bg-white rounded-xl w-96 p-6 shadow-xl">
         <h2 className="text-xl font-semibold mb-4">Write a Review</h2>
 
-        {/* Rating Selector */}
+        {/*Rating Selector */}
         <div className="flex gap-1 text-2xl mb-4">
           {Array.from({ length: 5 }).map((_, i) => (
             <button
@@ -59,7 +61,7 @@ export default function ReviewModal({ productId, onClose, onSuccess }: Props) {
           ))}
         </div>
 
-        {/*Comment Box */}
+        {/* 💬 Comment Box */}
         <textarea
           value={comment}
           onChange={(e) => setComment(e.target.value)}

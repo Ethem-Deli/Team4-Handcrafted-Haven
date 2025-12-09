@@ -13,7 +13,7 @@ export type Product = {
 
 type Props = {
   product: Product;
-  onAddToCart: (product: Product) => void; // 👈 pass handler from parent
+  onAddToCart: (product: Product) => void;
 };
 
 export default function ProductCard({ product, onAddToCart }: Props) {
@@ -39,7 +39,7 @@ export default function ProductCard({ product, onAddToCart }: Props) {
             onClick={() => onAddToCart(product)}
             className="text-emerald-700 font-medium hover:underline"
           >
-            + Add to Cart
+             Add to Cart
           </button>
         </div>
       </div>
