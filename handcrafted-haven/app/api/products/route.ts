@@ -24,7 +24,19 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  const enriched = products.map((p) => ({
+  type ProductWithExtras = {
+    id: number;
+    title: string;
+    price: number;
+    stock: number;
+    image: string | null;
+    categoryId: number | null;
+    _count: { orderItems: number };
+    reviews: { rating: number }[];
+    category: unknown;
+  };
+
+  const enriched = products.map((p: ProductWithExtras) => ({
     ...p,
     avgRating: p.reviews.length
       ? p.reviews.reduce((a, r) => a + r.rating, 0) / p.reviews.length
