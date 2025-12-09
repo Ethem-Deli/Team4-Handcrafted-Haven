@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import ProductCard from "@/components/ProductCard";
 
-export default async function SellerPage({ params }: { params: { id: string } }) {
-  const sellerId = Number(params.id);
+export default async function SellerPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const sellerId = Number(id);
 
   const seller = await prisma.user.findUnique({
     where: { id: sellerId },

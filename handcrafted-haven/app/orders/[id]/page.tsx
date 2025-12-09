@@ -25,10 +25,11 @@ async function updateOrderStatus(formData: FormData) {
   const order = await prisma.order.findFirst({
     where: {
       id: orderId,
-      items: { some: { product: { userId: Number(sellerId) } } },
+      items: {
+        some: { product: { userId: sellerId } },
+      },
     },
   });
-
   if (!order) throw new Error("Unauthorized update");
 
   await prisma.order.update({
@@ -46,16 +47,20 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
   const session = await getServerSession(authOptions);
   if (!session) redirect("/auth/signin");
 
-  const sellerId = Number((session.user as any).id);
+  const sellerId = (session.user as any).id;
 
   const order = await prisma.order.findFirst({
     where: {
       id: orderId,
-      items: { some: { product: { userId: sellerId } } },
+      items: {
+        some: { product: { userId: sellerId } },
+      },
     },
     include: {
       buyer: true,
-      items: { include: { product: true } },
+      items: {
+        include: { product: true },
+      },
     },
   });
 
@@ -74,7 +79,6 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
     <main className="max-w-4xl mx-auto p-8">
       <h1 className="text-3xl font-semibold mb-4">Order #{order.id}</h1>
 
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <p className="text-gray-600 text-sm">
@@ -85,25 +89,24 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
           </p>
         </div>
 
-        {/* Status Badge */}
         <span
-          className={`px-3 py-1 rounded text-sm font-semibold
-            ${
-              {
-                PENDING: "bg-yellow-200 text-yellow-800",
-                PAID: "bg-blue-200 text-blue-800",
-                SHIPPED: "bg-purple-200 text-purple-800",
-                COMPLETED: "bg-green-200 text-green-800",
-                CANCELLED: "bg-red-200 text-red-800",
-              }[order.status]
-            }
-          `}
+          className={`px-3 py-1 rounded text-sm font-semibold 
+          ${
+            order.status === "PENDING"
+              ? "bg-yellow-200 text-yellow-800"
+              : order.status === "PAID"
+              ? "bg-blue-200 text-blue-800"
+              : order.status === "SHIPPED"
+              ? "bg-purple-200 text-purple-800"
+              : order.status === "COMPLETED"
+              ? "bg-green-200 text-green-800"
+              : "bg-red-200 text-red-800"
+          }`}
         >
           {order.status}
         </span>
       </div>
 
-      {/* Items */}
       <section className="bg-white shadow rounded-lg p-4 mb-6">
         <h2 className="text-xl font-semibold mb-3">Items</h2>
 
@@ -131,23 +134,28 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
         </ul>
       </section>
 
-      {/* Total */}
       <div className="text-right font-bold text-xl mb-6">
         Total: ${total.toFixed(2)}
       </div>
 
-      {/* Status Update (Only Seller) */}
       {(session.user as any).role === "SELLER" && (
         <form action={updateOrderStatus} className="flex items-center gap-3">
           <input type="hidden" name="orderId" value={order.id} />
 
-          <select name="status" defaultValue={order.status} className="border rounded px-3 py-1">
+          <select
+            name="status"
+            defaultValue={order.status}
+            className="border rounded px-3 py-1"
+          >
             {STATUSES.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
 
-          <button className="px-4 py-2 bg-emerald-600 rounded text-white hover:bg-emerald-700">
+          <button
+            type="submit"
+            className="px-4 py-2 bg-emerald-600 rounded text-white hover:bg-emerald-700"
+          >
             Update Status
           </button>
         </form>
