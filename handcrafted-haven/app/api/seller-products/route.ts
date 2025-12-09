@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   const sellerId = (session.user as any).id;
 
   const products = await prisma.product.findMany({
-    where: { sellerId },
+    where: { userId: sellerId },
   });
 
   return NextResponse.json({ products });

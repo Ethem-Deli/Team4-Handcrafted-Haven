@@ -2,69 +2,60 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { deleteProduct } from "@/app/actions/products";
 
-export default function SellerProducts() {
-  const [products, setProducts] = useState([]);
+export default function SellersPage() {
+  const [sellers, setSellers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/seller-products")
-      .then((res) => res.json())
-      .then((data) => setProducts(data.products));
+    async function loadSellers() {
+      try {
+        const res = await fetch("/api/seller");
+        const data = await res.json();
+        setSellers(data.sellers);
+      } catch (err) {
+        console.error("Failed to load sellers", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadSellers();
   }, []);
 
-  async function handleDelete(id: number) {
-    await deleteProduct(id);
-    setProducts(products.filter((p: any) => p.id !== id));
+  if (loading) {
+    return <p className="p-10 text-center text-gray-600">Loading sellers...</p>;
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Your Products</h1>
+    <main className="p-10 bg-[#F1EDE3] min-h-screen">
+      <h1 className="text-4xl font-bold text-center text-gray-800 mb-10">
+        Our Sellers
+      </h1>
 
-        <Link href="/seller/products/new">
-          <button className="bg-gray-800 text-white px-4 py-2 rounded-lg">
-            + Add Product
-          </button>
-        </Link>
-      </div>
+      {sellers.length === 0 ? (
+        <p className="text-center text-gray-500">No sellers found.</p>
+      ) : (
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {sellers.map((seller) => (
+            <Link
+              key={seller.id}
+              href={`/seller/${seller.id}`}
+              className="bg-white shadow rounded-xl p-6 hover:shadow-lg transition cursor-pointer"
+            >
+              <h3 className="text-xl font-semibold text-gray-800">
+                {seller.storeName || seller.name}
+              </h3>
 
-      <div className="bg-white p-6 rounded-xl shadow">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b">
-              <th className="py-3 text-left">Name</th>
-              <th className="py-3">Price</th>
-              <th className="py-3">Action</th>
-            </tr>
-          </thead>
+              <p className="text-gray-500 text-sm mt-1">{seller.email}</p>
 
-          <tbody>
-            {products.map((p: any) => (
-              <tr key={p.id} className="border-b">
-                <td className="py-3">{p.name}</td>
-                <td className="py-3 text-center">${p.price}</td>
-                <td className="py-3 text-center">
-                  <Link
-                    href={`/seller/products/edit/${p.id}`}
-                    className="text-blue-600 hover:underline"
-                  >
-                    Edit
-                  </Link>{" "}
-                  |{" "}
-                  <button
-                    onClick={() => handleDelete(p.id)}
-                    className="text-red-600 hover:underline"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+              <p className="text-gray-600 mt-2 text-sm line-clamp-2">
+                {seller.craftDescription || "Handcrafted artisan"}
+              </p>
+            </Link>
+          ))}
+        </div>
+      )}
+    </main>
   );
 }

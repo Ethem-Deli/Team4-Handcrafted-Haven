@@ -62,7 +62,7 @@ export default function HomePage() {
       <div className="py-12">
         <TopSellers limit={3} />
         <Link
-          href="/sellers"
+          href="/seller"
           className="mt-8 inline-block px-12 py-3 bg-terracotta text-black rounded-lg shadow hover:bg-slate-900 hover:text-white transition-colors duration-300"
         >
           Explore More Sellers
