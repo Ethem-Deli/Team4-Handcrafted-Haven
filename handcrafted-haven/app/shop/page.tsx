@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ProductCard from "@/components/ProductCard";
-import Link from "next/link";
+import ProductModal from "@/components/ProductModal";
 
 export default function ShopPage() {
   // Filters
@@ -17,6 +17,7 @@ export default function ShopPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [totalPages, setTotalPages] = useState(1);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
   // Fetch Categories
   useEffect(() => {
@@ -48,6 +49,32 @@ export default function ShopPage() {
     }
     loadProducts();
   }, [q, category, sort, minPrice, maxPrice, page]);
+  // Add to Cart handler
+  async function handleAddToCart(product: any) {
+    try {
+      const res = await fetch("/api/cart/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: product.id, quantity: 1 }),
+      });
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          alert("Please sign in first to add products into cart.");
+          return;
+        }
+        alert("Could not add to cart ❌");
+        return;
+      }
+
+      alert("Product added to cart 🛒✨");
+
+      // Update cart icon count
+      window.dispatchEvent(new Event("cartUpdated"));
+    } catch (e) {
+      alert("Unexpected error. Try again.");
+    }
+  }
 
   return (
     <main className="p-10 bg-[#F1EDE3] min-h-screen">
@@ -57,7 +84,6 @@ export default function ShopPage() {
 
       {/* Filters */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-10">
-
         <input
           type="text"
           placeholder="Search..."
@@ -108,7 +134,12 @@ export default function ShopPage() {
       {products.length > 0 ? (
         <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {products.map((p) => (
-            <ProductCard key={p.id} product={p} onAddToCart={() => null} />
+            <div key={p.id} onClick={() => setSelectedProduct(p)}>
+              <ProductCard
+                product={p}
+                onAddToCart={handleAddToCart}
+              />
+            </div>
           ))}
         </div>
       ) : (
@@ -137,6 +168,15 @@ export default function ShopPage() {
           Next
         </button>
       </div>
+
+      {/* PRODUCT MODAL (click product to see) */}
+      {selectedProduct && (
+        <ProductModal
+          product={selectedProduct}
+          onAdd={handleAddToCart}
+          onClose={() => setSelectedProduct(null)}
+        />
+      )}
     </main>
   );
 }

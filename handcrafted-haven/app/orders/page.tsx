@@ -2,6 +2,54 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+
+const STATUSES = ["PENDING", "PAID", "SHIPPED", "COMPLETED", "CANCELLED"] as const;
+type OrderStatus = (typeof STATUSES)[number];
+
+// SERVER ACTION to update order status
+async function updateOrderStatus(formData: FormData) {
+  "use server";
+
+  const session = await getServerSession(authOptions);
+  if (!session || (session.user as any).role !== "SELLER") {
+    redirect("/auth/signin");
+  }
+
+  const sellerId = (session.user as any).id;
+  const orderId = Number(formData.get("orderId"));
+  const newStatus = formData.get("status") as OrderStatus;
+
+  if (!STATUSES.includes(newStatus)) {
+    throw new Error("Invalid status");
+  }
+
+  // ensure this order actually belongs to this seller
+  const order = await prisma.order.findFirst({
+    where: {
+      id: orderId,
+      items: {
+        some: {
+          product: {
+            userId: sellerId,
+          },
+        },
+      },
+    },
+  });
+
+  if (!order) {
+    throw new Error("Order not found or not authorized");
+  }
+
+  await prisma.order.update({
+    where: { id: orderId },
+    data: { status: newStatus },
+  });
+
+  // Refresh the orders page
+  revalidatePath("/orders");
+}
 
 export default async function SellerOrdersPage() {
   const session = await getServerSession(authOptions);
@@ -16,7 +64,7 @@ export default async function SellerOrdersPage() {
       items: {
         some: {
           product: {
-            userId: sellerId, 
+            userId: sellerId,
           },
         },
       },
@@ -47,17 +95,51 @@ export default async function SellerOrdersPage() {
             </span>
           </div>
 
-          <p className="text-sm mb-2">
+          <p className="text-sm mb-1">
             Buyer: {order.buyer?.name ?? order.buyer?.email}
           </p>
 
-          <ul className="text-sm space-y-1">
+          <p className="text-sm mb-2">
+            <span className="font-semibold">Status:</span>{" "}
+            <span className="inline-block px-2 py-1 text-xs rounded bg-gray-100">
+              {order.status}
+            </span>
+          </p>
+
+          <ul className="text-sm space-y-1 mb-3">
             {order.items.map((item: any) => (
               <li key={item.id}>
-                {item.quantity} × {item.product.title} — {item.price}
+                {item.quantity} × {item.product.title} — ${item.price.toFixed(2)}
               </li>
             ))}
           </ul>
+
+          {/* STATUS UPDATE FORM */}
+          <form
+            action={updateOrderStatus}
+            className="flex items-center gap-2 mt-2"
+          >
+            <input type="hidden" name="orderId" value={order.id} />
+
+            <select
+              name="status"
+              defaultValue={order.status}
+              className="border rounded px-2 py-1 text-sm"
+            >
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+
+            <button
+              type="submit"
+              className="px-3 py-1 text-sm bg-emerald-600 text-white rounded hover:bg-emerald-700"
+            >
+              Update Status
+            </button>
+          </form>
         </div>
       ))}
     </main>

@@ -5,10 +5,13 @@ import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
 import TopSellers from "@/components/TopSellers";
 import Hero from "@/components/Hero";
+import ProductModal from "@/components/ProductModal";
 
 export default function HomePage() {
   const [products, setProducts] = useState<any[]>([]);
+  const [modalProduct, setModalProduct] = useState<any>(null);
 
+  /** Load Top Products from DB */
   async function loadTopProducts() {
     try {
       const res = await fetch("/api/products/top", { cache: "no-store" });
@@ -19,13 +22,14 @@ export default function HomePage() {
     }
   }
 
-  // Load initially + refresh every 30 seconds
+  /** Load initially & refresh every 30s for home page */
   useEffect(() => {
     loadTopProducts();
     const timer = setInterval(loadTopProducts, 30000);
     return () => clearInterval(timer);
   }, []);
-  
+
+  /** DB function Add To Cart */
   async function handleAddToCart(product: any) {
     try {
       const res = await fetch("/api/cart/add", {
@@ -39,11 +43,11 @@ export default function HomePage() {
           alert("Please sign in to add items to your cart.");
           return;
         }
-        alert("Could not add to cart. Please try again.");
+        alert("Could not add to cart. Try again.");
         return;
       }
 
-      alert("Item added to cart ✅");
+      alert("Item added to cart 🛒");
       window.dispatchEvent(new Event("cartUpdated"));
     } catch {
       alert("Something went wrong. Please try again.");
@@ -54,7 +58,7 @@ export default function HomePage() {
     <section className="text-center space-y-6">
       <Hero />
 
-      {/* Top Sellers Section */}
+      {/*TOP SELLERS */}
       <div className="py-12">
         <TopSellers limit={3} />
         <Link
@@ -65,7 +69,7 @@ export default function HomePage() {
         </Link>
       </div>
 
-      {/* Our Top Products From DB */}
+      {/* OUR TOP PRODUCTS */}
       <main className="px-8 py-12 bg-[#F1EDE3] min-h-screen">
         <h1 className="text-3xl font-semibold text-center text-gray-800 mb-8">
           Our Top Products
@@ -76,11 +80,13 @@ export default function HomePage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
             {products.map((product) => (
-              <ProductCard
+              <div
                 key={product.id}
-                product={product}
-                onAddToCart={() => handleAddToCart(product)}
-              />
+                className="cursor-pointer"
+                onClick={() => setModalProduct(product)}
+              >
+                <ProductCard product={product} hideCart />
+              </div>
             ))}
           </div>
         )}
@@ -101,6 +107,15 @@ export default function HomePage() {
           Upload a Product
         </Link>
       </div>
+
+      {/*PRODUCT MODAL*/}
+      {modalProduct && (
+        <ProductModal
+          product={modalProduct}
+          onClose={() => setModalProduct(null)}
+          onAdd={handleAddToCart}
+        />
+      )}
     </section>
   );
 }

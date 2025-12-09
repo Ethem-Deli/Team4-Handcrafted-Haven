@@ -1,10 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";import Image from "next/image";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import Image from "next/image";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 
 // SERVER ACTIONS
+
 async function increaseAction(formData: FormData) {
   "use server";
   const id = Number(formData.get("itemId"));
@@ -39,6 +41,7 @@ async function removeAction(formData: FormData) {
 }
 
 // PAGE
+
 export default async function CartPage() {
   const session = await getServerSession(authOptions);
 
@@ -141,15 +144,14 @@ export default async function CartPage() {
 
       <div className="mt-10 text-right">
         <h2 className="text-2xl font-bold">Total: ${total.toFixed(2)}</h2>
+
+        {/* Go to Checkout page */}
         <Link
-          href="/shop"
-          className="mt-6 inline-block bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600"
+          href="/checkout"
+          className="mt-4 inline-block bg-blue-600 text-white px-8 py-2 rounded-lg hover:bg-blue-700"
         >
-          Back to Shopping 🛍️
+          Proceed to Checkout
         </Link>
-        <button className="mt-4 bg-blue-600 text-white px-8 py-2 rounded-lg hover:bg-blue-700">
-          Checkout
-        </button>
       </div>
     </main>
   );
