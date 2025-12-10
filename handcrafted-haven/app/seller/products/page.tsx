@@ -1,20 +1,26 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";;
+import { authOptions } from "@/lib/auth";
 
 export default async function SellerProducts() {
   const session = await getServerSession(authOptions);
   const sellerId = (session?.user as any)?.id;
+
+  if (!sellerId) return <p>You must be logged in as a seller.</p>;
 
   const products = await prisma.product.findMany({
     where: { userId: sellerId },
     include: { reviews: true },
   });
 
+  // Type helper
+  type ReviewType = { rating: number };
+
   const sellerRating =
-    products.flatMap(p => p.reviews).reduce((a, r) => a + r.rating, 0) /
-    products.flatMap(p => p.reviews).length || 0;
+    products.flatMap((p: { reviews: ReviewType[] }) => p.reviews)
+      .reduce((a: number, r: ReviewType) => a + r.rating, 0) /
+      products.flatMap((p: { reviews: ReviewType[] }) => p.reviews).length || 0;
 
   return (
     <div>
@@ -44,26 +50,35 @@ export default async function SellerProducts() {
             </tr>
           </thead>
           <tbody>
-            {products.map(p => (
-              <tr key={p.id} className="border-b">
-                <td className="py-3">{p.title}</td>
-                <td className="py-3 text-center">${p.price}</td>
-                <td className="py-3 text-center">
-                  ⭐{" "}
-                  {p.reviews.length
-                    ? (
-                        p.reviews.reduce((a, r) => a + r.rating, 0) /
-                        p.reviews.length
-                      ).toFixed(1)
-                    : "0"}
-                </td>
-                <td className="py-3 text-center">
-                  <button className="text-blue-600 hover:underline">Edit</button>{" "}
-                  |{" "}
-                  <button className="text-red-600 hover:underline">Delete</button>
-                </td>
-              </tr>
-            ))}
+            {products.map(
+              (
+                p: {
+                  id: number;
+                  title: string;
+                  price: number;
+                  reviews: ReviewType[];
+                }
+              ) => (
+                <tr key={p.id} className="border-b">
+                  <td className="py-3">{p.title}</td>
+                  <td className="py-3 text-center">${p.price}</td>
+                  <td className="py-3 text-center">
+                    ⭐{" "}
+                    {p.reviews.length
+                      ? (
+                          p.reviews.reduce((a: number, r: ReviewType) => a + r.rating, 0) /
+                          p.reviews.length
+                        ).toFixed(1)
+                      : "0"}
+                  </td>
+                  <td className="py-3 text-center">
+                    <button className="text-blue-600 hover:underline">Edit</button>{" "}
+                    |{" "}
+                    <button className="text-red-600 hover:underline">Delete</button>
+                  </td>
+                </tr>
+              )
+            )}
           </tbody>
         </table>
       </div>
