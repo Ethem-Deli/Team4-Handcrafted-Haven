@@ -84,9 +84,10 @@ export default async function CartPage() {
   }
 
   const total = cart.items.reduce(
-    (sum, item) => sum + item.quantity * item.product.price,
-    0
-  );
+  (sum: number, item: { quantity: number; product: { price: number } }) =>
+    sum + item.quantity * item.product.price,
+  0
+);
 
   return (
     <main className="p-10 max-w-5xl mx-auto">
