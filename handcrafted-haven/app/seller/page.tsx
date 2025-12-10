@@ -1,61 +1,133 @@
-"use client";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
+const STATUSES = ["PENDING", "PAID", "SHIPPED", "COMPLETED", "CANCELLED"] as const;
+type OrderStatus = (typeof STATUSES)[number];
 
-export default function SellersPage() {
-  const [sellers, setSellers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+// SERVER ACTION to update order status
+async function updateOrderStatus(formData: FormData) {
+  "use server";
 
-  useEffect(() => {
-    async function loadSellers() {
-      try {
-        const res = await fetch("/api/seller");
-        const data = await res.json();
-        setSellers(data.sellers);
-      } catch (err) {
-        console.error("Failed to load sellers", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadSellers();
-  }, []);
-
-  if (loading) {
-    return <p className="p-10 text-center text-gray-600">Loading sellers...</p>;
+  const session = await getServerSession(authOptions);
+  if (!session || (session.user as any).role !== "SELLER") {
+    redirect("/auth/signin");
   }
 
+  const sellerId = parseInt(session.user.id as string, 10);
+  const orderId = Number(formData.get("orderId"));
+  const newStatus = formData.get("status") as OrderStatus;
+
+  if (!STATUSES.includes(newStatus)) {
+    throw new Error("Invalid status");
+  }
+
+  const order = await prisma.order.findFirst({
+    where: {
+      id: orderId,
+      items: {
+        some: {
+          product: { is: { userId: sellerId } },
+        },
+      },
+    },
+  });
+
+  if (!order) throw new Error("Order not found or not authorized");
+
+  await prisma.order.update({
+    where: { id: orderId },
+    data: { status: newStatus },
+  });
+
+  revalidatePath("/seller");
+}
+
+export default async function SellerOrdersPage() {
+  const session = await getServerSession(authOptions);
+  if (!session || (session.user as any).role !== "SELLER") {
+    redirect("/auth/signin");
+  }
+
+  const sellerId = parseInt(session.user.id as string, 10);
+
+  const orders = await prisma.order.findMany({
+    where: {
+      items: {
+        some: {
+          product: { is: { userId: sellerId } },
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    include: {
+      buyer: true,
+      items: { include: { product: true } },
+    },
+  });
+
   return (
-    <main className="p-10 bg-[#F1EDE3] min-h-screen">
-      <h1 className="text-4xl font-bold text-center text-gray-800 mb-10">
-        Our Sellers
-      </h1>
+    <main className="max-w-4xl mx-auto py-10 px-4">
+      <h1 className="text-2xl font-semibold mb-6">Seller Dashboard</h1>
 
-      {sellers.length === 0 ? (
-        <p className="text-center text-gray-500">No sellers found.</p>
-      ) : (
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {sellers.map((seller) => (
-            <Link
-              key={seller.id}
-              href={`/seller/${seller.id}`}
-              className="bg-white shadow rounded-xl p-6 hover:shadow-lg transition cursor-pointer"
+      {orders.length === 0 && <p>No orders yet.</p>}
+
+      {orders.map((order) => (
+        <div key={order.id} className="bg-white shadow rounded-lg p-4 mb-4">
+          <div className="flex justify-between mb-2">
+            <span className="font-medium">Order #{order.id}</span>
+            <span className="text-sm text-gray-500">
+              {new Date(order.createdAt).toLocaleString()}
+            </span>
+          </div>
+
+          <p className="text-sm mb-1">
+            Buyer: {order.buyer?.name ?? order.buyer?.email}
+          </p>
+
+          <p className="text-sm mb-2">
+            <span className="font-semibold">Status:</span>{" "}
+            <span className="inline-block px-2 py-1 text-xs rounded bg-gray-100">
+              {order.status}
+            </span>
+          </p>
+
+          <ul className="text-sm space-y-1 mb-3">
+            {order.items.map((item) => (
+              <li key={item.id}>
+                {item.quantity} × {item.product.title} — $
+                {item.price.toFixed(2)}
+              </li>
+            ))}
+          </ul>
+
+          {/* UPDATE ORDER STATUS */}
+          <form action={updateOrderStatus} className="flex items-center gap-2 mt-2">
+            <input type="hidden" name="orderId" value={order.id} />
+
+            <select
+              name="status"
+              defaultValue={order.status}
+              className="border rounded px-2 py-1 text-sm"
             >
-              <h3 className="text-xl font-semibold text-gray-800">
-                {seller.storeName || seller.name}
-              </h3>
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
 
-              <p className="text-gray-500 text-sm mt-1">{seller.email}</p>
-
-              <p className="text-gray-600 mt-2 text-sm line-clamp-2">
-                {seller.craftDescription || "Handcrafted artisan"}
-              </p>
-            </Link>
-          ))}
+            <button
+              type="submit"
+              className="px-3 py-1 text-sm bg-emerald-600 text-white rounded hover:bg-emerald-700"
+            >
+              Update Status
+            </button>
+          </form>
         </div>
-      )}
+      ))}
     </main>
   );
 }

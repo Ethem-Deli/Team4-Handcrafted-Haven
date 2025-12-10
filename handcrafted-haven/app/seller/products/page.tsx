@@ -5,9 +5,12 @@ import { authOptions } from "@/lib/auth";
 
 export default async function SellerProducts() {
   const session = await getServerSession(authOptions);
-  const sellerId = (session?.user as any)?.id;
 
-  if (!sellerId) return <p>You must be logged in as a seller.</p>;
+  const sellerId = parseInt((session?.user as any)?.id as string, 10);
+
+  if (!session?.user || (session.user as any).role !== "SELLER") {
+    return <p>You must be logged in as a seller.</p>;
+  }
 
   const products = await prisma.product.findMany({
     where: { userId: sellerId },

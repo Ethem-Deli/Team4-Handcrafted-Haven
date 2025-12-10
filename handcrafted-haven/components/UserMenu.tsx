@@ -11,7 +11,8 @@ export default function UserMenu() {
 
   if (!session?.user) return null;
 
-  const role = (session.user as any).role;
+  const user = session.user as any;
+  const role = user.role;
 
   return (
     <div className="relative">
@@ -31,11 +32,15 @@ export default function UserMenu() {
           className="absolute right-0 mt-2 w-48 bg-white shadow-md rounded-lg py-2 z-50"
           onMouseLeave={() => setOpen(false)}
         >
-          {/* COMMON OPTIONS */}
-          <Link href="/profile" className="dropdown-item">
+          {/* PROFILE */}
+          <Link
+            href={role === "SELLER" ? "/seller/profile" : "/profile"}
+            className="dropdown-item"
+          >
             👤 Profile
           </Link>
 
+          {/* BUYER LINKS */}
           {role === "BUYER" && (
             <>
               <Link href="/orders" className="dropdown-item">
@@ -47,12 +52,13 @@ export default function UserMenu() {
             </>
           )}
 
+          {/* SELLER LINKS */}
           {role === "SELLER" && (
             <>
-              <Link href="/seller" className="dropdown-item">
+              <Link href="/seller/dashboard" className="dropdown-item">
                 🛍 Seller Dashboard
               </Link>
-              <Link href="/products/upload" className="dropdown-item">
+              <Link href="/seller/products/new" className="dropdown-item">
                 ➕ Add Product
               </Link>
               <Link href="/seller/orders" className="dropdown-item">
@@ -61,8 +67,9 @@ export default function UserMenu() {
             </>
           )}
 
+          {/* LOGOUT */}
           <button
-            onClick={() => signOut()}
+            onClick={() => signOut({ callbackUrl: "/" })}
             className="dropdown-item text-red-600 hover:text-red-800"
           >
             🚪 Logout

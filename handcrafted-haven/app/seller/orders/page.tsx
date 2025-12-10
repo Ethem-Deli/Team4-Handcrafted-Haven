@@ -3,20 +3,21 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
-export default async function SellerOrdersPage() {
+export default async function SellerPage() {
   const session = await getServerSession(authOptions);
+
   if (!session || (session.user as any).role !== "SELLER") {
     redirect("/auth/signin");
   }
 
-  const sellerId = (session.user as any).id;
+  const sellerId = parseInt(session.user.id as string, 10);
 
   const orders = await prisma.order.findMany({
     where: {
       items: {
         some: {
           product: {
-            userId: sellerId,
+            is: { userId: sellerId },
           },
         },
       },
@@ -30,62 +31,44 @@ export default async function SellerOrdersPage() {
 
   return (
     <main className="max-w-4xl mx-auto py-10 px-4">
-      <h1 className="text-2xl font-semibold mb-6">Orders Received</h1>
+      <h1 className="text-2xl font-semibold mb-6">Seller Dashboard</h1>
+
+      <p className="mb-6 text-gray-700">
+        Welcome, {session.user.name ?? session.user.email}
+      </p>
+
+      <h2 className="text-xl font-semibold mb-3">Recent Orders</h2>
 
       {orders.length === 0 && <p>No orders yet.</p>}
 
       <div className="space-y-4">
-        {orders.map(
-          (
-            order: {
-              id: number;
-              createdAt: Date;
-              status: string;
-              buyer: { name: string | null; email: string } | null;
-              items: {
-                id: number;
-                quantity: number;
-                price: number;
-                product: { title: string };
-              }[];
-            }
-          ) => (
-            <div key={order.id} className="bg-white shadow rounded-lg p-4">
-              <div className="flex justify-between mb-2">
-                <span className="font-medium">Order #{order.id}</span>
-                <span className="text-sm text-gray-500">
-                  {new Date(order.createdAt).toLocaleString()}
-                </span>
-              </div>
-
-              <p className="text-sm mb-2">
-                Buyer: {order.buyer?.name ?? order.buyer?.email}
-              </p>
-
-              <ul className="text-sm space-y-1">
-                {order.items.map(
-                  (
-                    item: {
-                      id: number;
-                      quantity: number;
-                      price: number;
-                      product: { title: string };
-                    }
-                  ) => (
-                    <li key={item.id}>
-                      {item.quantity} × {item.product.title} — $
-                      {item.price.toFixed(2)}
-                    </li>
-                  )
-                )}
-              </ul>
-
-              <p className="text-sm mt-2">
-                Status: <span className="font-semibold">{order.status}</span>
-              </p>
+        {orders.map((order) => (
+          <div key={order.id} className="bg-white shadow rounded-lg p-4">
+            <div className="flex justify-between mb-2">
+              <span className="font-medium">Order #{order.id}</span>
+              <span className="text-sm text-gray-500">
+                {new Date(order.createdAt).toLocaleString()}
+              </span>
             </div>
-          )
-        )}
+
+            <p className="text-sm mb-2">
+              Buyer: {order.buyer?.name ?? order.buyer?.email}
+            </p>
+
+            <ul className="text-sm space-y-1">
+              {order.items.map((item) => (
+                <li key={item.id}>
+                  {item.quantity} × {item.product.title} — $
+                  {item.price.toFixed(2)}
+                </li>
+              ))}
+            </ul>
+
+            <p className="text-sm mt-2">
+              Status: <span className="font-semibold">{order.status}</span>
+            </p>
+          </div>
+        ))}
       </div>
     </main>
   );

@@ -30,7 +30,7 @@ export const authOptions: NextAuthOptions = {
         if (!valid) return null;
 
         return {
-          id: user.id.toString(), // ⚠ FIX HERE
+          id: user.id.toString(), // MUST BE STRING
           name: user.name,
           email: user.email,
           role: user.role,
@@ -41,17 +41,21 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async jwt({ token, user }) {
+      // When user logs in, attach id & role
       if (user) {
-        token.role = (user as any).role;
+        token.id = user.id;
+        token.role = (user as any)?.role;
       }
       return token;
     },
+
     async session({ session, token }) {
-  if (token && session.user) {
-    session.user.id = token.sub ?? "";  // <- FIX here
-    (session.user as any).role = token.role;
-  }
-  return session;
-},
+      // Attach id & role to client session
+      if (session.user) {
+        session.user.id = token.id as string;
+        (session.user as any).role = token.role;
+      }
+      return session;
+    },
   },
 };
