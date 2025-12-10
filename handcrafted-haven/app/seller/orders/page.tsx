@@ -35,29 +35,57 @@ export default async function SellerOrdersPage() {
       {orders.length === 0 && <p>No orders yet.</p>}
 
       <div className="space-y-4">
-        {orders.map((order) => (
-          <div key={order.id} className="bg-white shadow rounded-lg p-4">
-            <div className="flex justify-between mb-2">
-              <span className="font-medium">Order #{order.id}</span>
-              <span className="text-sm text-gray-500">
-                {new Date(order.createdAt).toLocaleString()}
-              </span>
+        {orders.map(
+          (
+            order: {
+              id: number;
+              createdAt: Date;
+              status: string;
+              buyer: { name: string | null; email: string } | null;
+              items: {
+                id: number;
+                quantity: number;
+                price: number;
+                product: { title: string };
+              }[];
+            }
+          ) => (
+            <div key={order.id} className="bg-white shadow rounded-lg p-4">
+              <div className="flex justify-between mb-2">
+                <span className="font-medium">Order #{order.id}</span>
+                <span className="text-sm text-gray-500">
+                  {new Date(order.createdAt).toLocaleString()}
+                </span>
+              </div>
+
+              <p className="text-sm mb-2">
+                Buyer: {order.buyer?.name ?? order.buyer?.email}
+              </p>
+
+              <ul className="text-sm space-y-1">
+                {order.items.map(
+                  (
+                    item: {
+                      id: number;
+                      quantity: number;
+                      price: number;
+                      product: { title: string };
+                    }
+                  ) => (
+                    <li key={item.id}>
+                      {item.quantity} × {item.product.title} — $
+                      {item.price.toFixed(2)}
+                    </li>
+                  )
+                )}
+              </ul>
+
+              <p className="text-sm mt-2">
+                Status: <span className="font-semibold">{order.status}</span>
+              </p>
             </div>
-            <p className="text-sm mb-2">
-              Buyer: {order.buyer?.name ?? order.buyer?.email}
-            </p>
-            <ul className="text-sm space-y-1">
-              {order.items.map((item: any) => (
-                <li key={item.id}>
-                  {item.quantity} × {item.product.title} — {item.price}
-                </li>
-              ))}
-            </ul>
-            <p className="text-sm mt-2">
-              Status: <span className="font-semibold">{order.status}</span>
-            </p>
-          </div>
-        ))}
+          )
+        )}
       </div>
     </main>
   );
