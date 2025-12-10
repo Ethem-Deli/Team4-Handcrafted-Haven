@@ -94,54 +94,62 @@ export default async function CartPage() {
       <h1 className="text-3xl font-bold mb-8">Your Cart</h1>
 
       <div className="space-y-6">
-        {cart.items.map((item) => (
-          <div
-            key={item.id}
-            className="flex items-center justify-between border-b pb-4"
-          >
-            <div className="flex items-center gap-4">
-              <Image
-                src={item.product.image || "/images/placeholder.png"}
-                alt={item.product.title}
-                width={90}
-                height={90}
-                className="rounded-md object-cover"
-              />
-              <div>
-                <h2 className="text-lg font-semibold">{item.product.title}</h2>
-                <p className="text-gray-600">
-                  ${item.product.price.toFixed(2)} × {item.quantity}
-                </p>
-                <p className="font-bold text-green-700">
-                  ${(item.product.price * item.quantity).toFixed(2)}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              {/* DECREASE */}
-              <form action={decreaseAction}>
-                <input type="hidden" name="itemId" value={item.id} />
-                <button className="px-3 py-1 bg-gray-200 rounded">-</button>
-              </form>
-
-              {/* INCREASE */}
-              <form action={increaseAction}>
-                <input type="hidden" name="itemId" value={item.id} />
-                <button className="px-3 py-1 bg-gray-200 rounded">+</button>
-              </form>
-
-              {/* REMOVE */}
-              <form action={removeAction}>
-                <input type="hidden" name="itemId" value={item.id} />
-                <button className="px-3 py-1 bg-red-600 text-white rounded">
-                  Remove
-                </button>
-              </form>
-            </div>
+  {cart.items.map(
+    (
+      item: {
+        id: number;
+        quantity: number;
+        product: { title: string; price: number; image: string | null };
+      }
+    ) => (
+      <div
+        key={item.id}
+        className="flex items-center justify-between border-b pb-4"
+      >
+        <div className="flex items-center gap-4">
+          <Image
+            src={item.product.image || "/images/placeholder.png"}
+            alt={item.product.title}
+            width={90}
+            height={90}
+            className="rounded-md object-cover"
+          />
+          <div>
+            <h2 className="text-lg font-semibold">{item.product.title}</h2>
+            <p className="text-gray-600">
+              ${item.product.price.toFixed(2)} × {item.quantity}
+            </p>
+            <p className="font-bold text-green-700">
+              ${(item.product.price * item.quantity).toFixed(2)}
+            </p>
           </div>
-        ))}
+        </div>
+
+        <div className="flex gap-2">
+          {/* DECREASE */}
+          <form action={decreaseAction}>
+            <input type="hidden" name="itemId" value={item.id} />
+            <button className="px-3 py-1 bg-gray-200 rounded">-</button>
+          </form>
+
+          {/* INCREASE */}
+          <form action={increaseAction}>
+            <input type="hidden" name="itemId" value={item.id} />
+            <button className="px-3 py-1 bg-gray-200 rounded">+</button>
+          </form>
+
+          {/* REMOVE */}
+          <form action={removeAction}>
+            <input type="hidden" name="itemId" value={item.id} />
+            <button className="px-3 py-1 bg-red-600 text-white rounded">
+              Remove
+            </button>
+          </form>
+        </div>
       </div>
+    )
+  )}
+</div>
 
       <div className="mt-10 text-right">
         <h2 className="text-2xl font-bold">Total: ${total.toFixed(2)}</h2>
