@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";;
+import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import Stripe from "stripe";
@@ -8,6 +8,7 @@ import Link from "next/link";
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY || "";
 
+// SERVER ACTION — Handle checkout submission
 async function handleCheckout(formData: FormData) {
   "use server";
 
@@ -41,31 +42,48 @@ async function handleCheckout(formData: FormData) {
     redirect("/cart");
   }
 
+  // COD PAYMENT
   if (paymentMethod === "cod") {
-    // CASH ON DELIVERY: create order immediately
-
     const order = await prisma.order.create({
       data: {
-        status: "PENDING", // from db enum
+        status: "PENDING", // enum from DB
         buyer: { connect: { id: user.id } },
+
+        // CREATE ORDER ITEMS
         items: {
-          create: cart.items.map((item) => ({
-            product: { connect: { id: item.productId } },
-            quantity: item.quantity,
-            price: item.product.price,
-          })),
+          create: cart.items.map(
+            (
+              item: {
+                productId: number;
+                quantity: number;
+                product: { price: number; title: string };
+              }
+            ) => ({
+              product: { connect: { id: item.productId } },
+              quantity: item.quantity,
+              price: item.product.price,
+            })
+          ),
         },
+
+        // SAVE SHIPPING DETAILS
+        fullName,
+        address,
+        city,
+        country,
+        phone,
       },
     });
 
-    // Clear cart
+    // CLEAR CART
     await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
-
     revalidatePath("/cart");
-    redirect(`/checkout/success?orderId=${order.id}`);
-  } else if (paymentMethod === "card") {
-    // STRIPE PAYMENT
 
+    redirect(`/checkout/success?orderId=${order.id}`);
+  }
+
+  // CARD (STRIPE) PAYMENT
+  if (paymentMethod === "card") {
     if (!stripeSecretKey) {
       throw new Error("STRIPE_SECRET_KEY is not set in environment variables");
     }
@@ -74,17 +92,20 @@ async function handleCheckout(formData: FormData) {
       apiVersion: "2024-06-20" as any,
     });
 
-    const lineItems = cart.items.map((item) => ({
-      price_data: {
-        currency: "usd",
-        product_data: {
-          name: item.product.title,
+    const lineItems = cart.items.map(
+      (
+        item: { quantity: number; product: { price: number; title: string } }
+      ) => ({
+        price_data: {
+          currency: "usd",
+          product_data: { name: item.product.title },
+          unit_amount: Math.round(item.product.price * 100), // cents
         },
-        unit_amount: Math.round(item.product.price * 100), // cents
-      },
-      quantity: item.quantity,
-    }));
+        quantity: item.quantity,
+      })
+    );
 
+    // Stripe Session
     const sessionStripe = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items: lineItems,
@@ -92,15 +113,13 @@ async function handleCheckout(formData: FormData) {
       cancel_url: `${process.env.NEXTAUTH_URL}/checkout`,
     });
 
-    // NOTE: For a real app, you'd use a Stripe webhook to create the order
-    // after successful payment. For this project we keept simple.
-
     redirect(sessionStripe.url!);
-  } else {
-    throw new Error("Invalid payment method");
   }
+
+  throw new Error("Invalid payment method");
 }
 
+// MAIN CHECKOUT PAGE
 export default async function CheckoutPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
@@ -121,7 +140,8 @@ export default async function CheckoutPage() {
   }
 
   const total = cart.items.reduce(
-    (sum, item) => sum + item.quantity * item.product.price,
+    (sum: number, item: { quantity: number; product: { price: number } }) =>
+      sum + item.quantity * item.product.price,
     0
   );
 
@@ -133,16 +153,24 @@ export default async function CheckoutPage() {
       <section className="mb-8 bg-white p-4 rounded-lg shadow">
         <h2 className="text-xl font-semibold mb-3">Order Summary</h2>
         <ul className="space-y-2">
-          {cart.items.map((item) => (
-            <li key={item.id} className="flex justify-between text-sm">
-              <span>
-                {item.product.title} × {item.quantity}
-              </span>
-              <span>
-                ${(item.product.price * item.quantity).toFixed(2)}
-              </span>
-            </li>
-          ))}
+          {cart.items.map(
+            (
+              item: {
+                id: number;
+                quantity: number;
+                product: { price: number; title: string };
+              }
+            ) => (
+              <li key={item.id} className="flex justify-between text-sm">
+                <span>
+                  {item.product.title} × {item.quantity}
+                </span>
+                <span>
+                  ${(item.product.price * item.quantity).toFixed(2)}
+                </span>
+              </li>
+            )
+          )}
         </ul>
         <p className="mt-4 text-right text-lg font-bold">
           Total: ${total.toFixed(2)}
@@ -193,12 +221,7 @@ export default async function CheckoutPage() {
 
         <div className="flex flex-col gap-2">
           <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="cod"
-              defaultChecked
-            />
+            <input type="radio" name="paymentMethod" value="cod" defaultChecked />
             <span>Cash on Delivery (COD)</span>
           </label>
 
@@ -216,8 +239,7 @@ export default async function CheckoutPage() {
         </button>
 
         <p className="text-xs text-gray-500 mt-2">
-          * For Stripe payments, you will be redirected to a secure payment
-          page.
+          * For Stripe payments, you will be redirected to a secure payment page.
         </p>
       </form>
 

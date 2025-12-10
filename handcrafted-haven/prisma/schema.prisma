@@ -71,6 +71,13 @@ model Order {
   status    OrderStatus @default(PENDING)
   createdAt DateTime    @default(now())
 
+  // Temporarily optional (?)
+  fullName  String?
+  address   String?
+  city      String?
+  country   String?
+  phone     String?
+
   buyer   User @relation("BuyerOrders", fields: [buyerId], references: [id])
   buyerId Int
 
