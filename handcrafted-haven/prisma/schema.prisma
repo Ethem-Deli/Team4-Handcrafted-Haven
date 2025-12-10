@@ -71,7 +71,6 @@ model Order {
   status    OrderStatus @default(PENDING)
   createdAt DateTime    @default(now())
 
-  // Temporarily optional (?)
   fullName  String?
   address   String?
   city      String?

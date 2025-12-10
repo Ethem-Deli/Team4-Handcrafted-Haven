@@ -30,6 +30,7 @@ async function updateOrderStatus(formData: FormData) {
       },
     },
   });
+
   if (!order) throw new Error("Unauthorized update");
 
   await prisma.order.update({
@@ -40,7 +41,11 @@ async function updateOrderStatus(formData: FormData) {
   revalidatePath(`/orders/${orderId}`);
 }
 
-export default async function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function OrderDetailsPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
   const orderId = Number(id);
 
@@ -68,12 +73,20 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
     return (
       <main className="max-w-3xl mx-auto p-6 text-center">
         <h1 className="text-2xl font-semibold mb-4">Order Not Found</h1>
-        <p className="text-gray-500">This order does not exist or you are not permitted to view it.</p>
+        <p className="text-gray-500">
+          This order does not exist or you are not permitted to view it.
+        </p>
       </main>
     );
   }
 
-  const total = order.items.reduce((sum, item) => sum + item.quantity * item.price, 0);
+  const total = order.items.reduce(
+    (
+      sum: number,
+      item: { quantity: number; price: number }
+    ) => sum + item.quantity * item.price,
+    0
+  );
 
   return (
     <main className="max-w-4xl mx-auto p-8">
@@ -111,26 +124,35 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
         <h2 className="text-xl font-semibold mb-3">Items</h2>
 
         <ul className="space-y-4">
-          {order.items.map((item) => (
-            <li key={item.id} className="flex items-center gap-4">
-              <Image
-                src={item.product.image || "/images/placeholder.png"}
-                alt={item.product.title}
-                width={70}
-                height={70}
-                className="rounded-md object-cover"
-              />
-              <div className="flex-1">
-                <p className="font-medium">{item.product.title}</p>
-                <p className="text-sm text-gray-500">
-                  {item.quantity} × ${item.price.toFixed(2)}
+          {order.items.map(
+            (
+              item: {
+                id: number;
+                quantity: number;
+                price: number;
+                product: { title: string; image: string | null };
+              }
+            ) => (
+              <li key={item.id} className="flex items-center gap-4">
+                <Image
+                  src={item.product.image || "/images/placeholder.png"}
+                  alt={item.product.title}
+                  width={70}
+                  height={70}
+                  className="rounded-md object-cover"
+                />
+                <div className="flex-1">
+                  <p className="font-medium">{item.product.title}</p>
+                  <p className="text-sm text-gray-500">
+                    {item.quantity} × ${item.price.toFixed(2)}
+                  </p>
+                </div>
+                <p className="font-bold text-green-700">
+                  ${(item.quantity * item.price).toFixed(2)}
                 </p>
-              </div>
-              <p className="font-bold text-green-700">
-                ${(item.quantity * item.price).toFixed(2)}
-              </p>
-            </li>
-          ))}
+              </li>
+            )
+          )}
         </ul>
       </section>
 
@@ -148,7 +170,9 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
             className="border rounded px-3 py-1"
           >
             {STATUSES.map((s) => (
-              <option key={s} value={s}>{s}</option>
+              <option key={s} value={s}>
+                {s}
+              </option>
             ))}
           </select>
 
